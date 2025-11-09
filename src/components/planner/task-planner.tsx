@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -8,13 +9,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { mockTasks, mockTimetable } from '@/lib/data';
 import type { Task, Class } from '@/lib/types';
-import { Plus, Bell, CalendarDays, ListChecks } from 'lucide-react';
+import { Plus, Bell, CalendarDays, ListChecks, Pencil } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const daysOfWeek: Class['day'][] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export function TaskPlanner() {
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [newTask, setNewTask] = useState('');
+  const [timetable, setTimetable] = useState<Class[]>(mockTimetable);
+  const [isClassDialogOpen, setIsClassDialogOpen] = useState(false);
+  const [editingClass, setEditingClass] = useState<Class | null>(null);
 
   const handleAddTask = () => {
     if (newTask.trim()) {
@@ -31,13 +38,36 @@ export function TaskPlanner() {
   const toggleTask = (taskId: string) => {
     setTasks(tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t));
   };
+
+  const handleEditClassClick = (classItem: Class) => {
+    setEditingClass(classItem);
+    setIsClassDialogOpen(true);
+  };
+
+  const handleSaveClass = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editingClass) return;
+
+    const formData = new FormData(e.currentTarget);
+    const updatedClass: Class = {
+      ...editingClass,
+      name: formData.get('className') as string,
+      time: formData.get('classTime') as string,
+      day: formData.get('classDay') as Class['day'],
+    };
+
+    setTimetable(timetable.map(c => c.id === updatedClass.id ? updatedClass : c));
+    setEditingClass(null);
+    setIsClassDialogOpen(false);
+  };
   
   const timetableByDay = daysOfWeek.map(day => ({
       day,
-      classes: mockTimetable.filter(c => c.day === day).sort((a,b) => a.time.localeCompare(b.time))
+      classes: timetable.filter(c => c.day === day).sort((a,b) => a.time.localeCompare(b.time))
   }));
 
   return (
+    <>
     <Tabs defaultValue="planner" className="h-full flex flex-col">
       <div className="flex-shrink-0">
         <TabsList className="grid w-full grid-cols-2">
@@ -88,7 +118,7 @@ export function TaskPlanner() {
         <Card className="h-full">
           <CardHeader>
             <CardTitle className="font-headline">Weekly Timetable</CardTitle>
-            <CardDescription>Your class schedule for the week. Click the bell to set a reminder.</CardDescription>
+            <CardDescription>Your class schedule for the week. Click the pencil to edit.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 max-h-[calc(100vh-20rem)] overflow-y-auto pr-2">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -102,9 +132,14 @@ export function TaskPlanner() {
                                         <p className="font-medium">{c.name}</p>
                                         <p className="text-sm text-muted-foreground">{c.time}</p>
                                     </div>
-                                    <Button variant="ghost" size="icon">
-                                        <Bell className="h-4 w-4" />
-                                    </Button>
+                                    <div className="flex items-center">
+                                      <Button variant="ghost" size="icon" onClick={() => handleEditClassClick(c)}>
+                                          <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="icon">
+                                          <Bell className="h-4 w-4" />
+                                      </Button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -115,5 +150,41 @@ export function TaskPlanner() {
         </Card>
       </TabsContent>
     </Tabs>
+
+    <Dialog open={isClassDialogOpen} onOpenChange={setIsClassDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Class</DialogTitle>
+        </DialogHeader>
+        {editingClass && (
+        <form onSubmit={handleSaveClass} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="className">Class Name</Label>
+            <Input id="className" name="className" defaultValue={editingClass.name} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="classTime">Time</Label>
+            <Input id="classTime" name="classTime" defaultValue={editingClass.time} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="classDay">Day</Label>
+            <Select name="classDay" defaultValue={editingClass.day} required>
+              <SelectTrigger id="classDay">
+                <SelectValue placeholder="Select a day" />
+              </SelectTrigger>
+              <SelectContent>
+                {daysOfWeek.map(day => <SelectItem key={day} value={day}>{day}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setIsClassDialogOpen(false)}>Cancel</Button>
+            <Button type="submit">Save Changes</Button>
+          </DialogFooter>
+        </form>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
