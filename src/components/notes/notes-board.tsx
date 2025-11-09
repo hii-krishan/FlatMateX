@@ -50,7 +50,7 @@ export function NotesBoard() {
             key={note.id}
             className={`p-4 rounded-lg shadow-md break-words ${note.color} border border-black/10 dark:border-white/10`}
           >
-            <p className="text-foreground/80">{note.content}</p>
+            <p className="text-gray-800 dark:text-gray-200">{note.content}</p>
           </div>
         ))}
       </div>

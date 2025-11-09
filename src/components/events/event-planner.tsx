@@ -10,11 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { mockEvents, mockPolls } from '@/lib/data';
 import type { Event, Poll } from '@/lib/types';
-import { PlusCircle, PartyPopper, Film, Birthday, School, Vote } from 'lucide-react';
+import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote } from 'lucide-react';
 
 const eventIcons = {
   'Movie Night': Film,
-  'Birthday': Birthday,
+  'Birthday': CakeSlice,
   'College Fest': School,
   'Outing': PartyPopper,
 };
