@@ -13,6 +13,7 @@ import {
   PartyPopper,
   Settings,
   LogOut,
+  Home,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -43,7 +44,7 @@ export function DashboardSidebar() {
     <>
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 p-2">
-            <Bot className="h-8 w-8 text-primary" />
+            <Home className="h-8 w-8 text-primary" />
             <div className="flex flex-col">
                 <h2 className="font-headline text-xl font-bold tracking-tight">FlatMateX</h2>
                 <p className="text-xs text-muted-foreground">Smart Living</p>
