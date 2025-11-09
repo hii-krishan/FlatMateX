@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   Home,
+  StickyNote,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -30,6 +31,7 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
   { href: '/dashboard/expenses', icon: Wallet, label: 'Expenses' },
   { href: '/dashboard/assistant', icon: Bot, label: 'AI Assistant' },
+  { href: '/dashboard/notes', icon: StickyNote, label: 'Shared Notes' },
   { href: '/dashboard/services', icon: Map, label: 'Nearby Services' },
   { href: '/dashboard/planner', icon: CalendarCheck, label: 'Planner' },
   { href: '/dashboard/groceries', icon: ShoppingCart, label: 'Groceries' },
