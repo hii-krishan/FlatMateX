@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { mockTasks, mockTimetable } from '@/lib/data';
 import type { Task, Class } from '@/lib/types';
-import { Plus, Bell } from 'lucide-react';
+import { Plus, Bell, CalendarDays, ListChecks } from 'lucide-react';
 
 const daysOfWeek: Class['day'][] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -38,19 +38,21 @@ export function TaskPlanner() {
   }));
 
   return (
-    <Tabs defaultValue="planner" className="space-y-6">
-      <TabsList>
-        <TabsTrigger value="planner">Task Planner</TabsTrigger>
-        <TabsTrigger value="timetable">Class Timetable</TabsTrigger>
-      </TabsList>
+    <Tabs defaultValue="planner" className="h-full flex flex-col">
+      <div className="flex-shrink-0">
+        <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="planner"><ListChecks className="mr-2" />Task Planner</TabsTrigger>
+            <TabsTrigger value="timetable"><CalendarDays className="mr-2"/>Class Timetable</TabsTrigger>
+        </TabsList>
+      </div>
 
-      <TabsContent value="planner">
-        <Card>
+      <TabsContent value="planner" className="flex-grow mt-6">
+        <Card className="h-full flex flex-col">
           <CardHeader>
             <CardTitle className="font-headline">Daily Study Planner</CardTitle>
             <CardDescription>Organize your tasks and stay on top of your deadlines.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 flex-grow">
             <div className="flex w-full items-center space-x-2">
               <Input 
                 placeholder="Add a new task..." 
@@ -60,7 +62,7 @@ export function TaskPlanner() {
               />
               <Button onClick={handleAddTask}><Plus className="mr-2 h-4 w-4" /> Add Task</Button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[calc(100vh-24rem)] overflow-y-auto pr-2">
               {tasks.map(task => (
                 <div key={task.id} className="flex items-center space-x-3 rounded-md border p-3 hover:bg-muted/50 transition-colors">
                   <Checkbox 
@@ -82,20 +84,20 @@ export function TaskPlanner() {
         </Card>
       </TabsContent>
 
-      <TabsContent value="timetable">
-        <Card>
+      <TabsContent value="timetable" className="flex-grow mt-6">
+        <Card className="h-full">
           <CardHeader>
             <CardTitle className="font-headline">Weekly Timetable</CardTitle>
             <CardDescription>Your class schedule for the week. Click the bell to set a reminder.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 max-h-[calc(100vh-20rem)] overflow-y-auto pr-2">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {timetableByDay.filter(d => d.classes.length > 0).map(({day, classes}) => (
                     <div key={day}>
                         <h3 className="font-semibold mb-2 text-primary">{day}</h3>
                         <div className="space-y-2">
                             {classes.map(c => (
-                                <div key={c.id} className="flex items-center justify-between rounded-md border p-3 bg-background">
+                                <div key={c.id} className="flex items-center justify-between rounded-lg border p-3 bg-card shadow-sm hover:shadow-md transition-shadow">
                                     <div>
                                         <p className="font-medium">{c.name}</p>
                                         <p className="text-sm text-muted-foreground">{c.time}</p>
