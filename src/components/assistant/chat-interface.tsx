@@ -29,11 +29,11 @@ export function ChatInterface() {
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const scrollViewportRef = useRef<HTMLDivElement>(null);
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
-        if (scrollViewportRef.current) {
-            scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
+        if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
         }
     };
 
@@ -67,7 +67,7 @@ export function ChatInterface() {
         <div className="h-[calc(100vh-10rem)] flex flex-col">
             <Card className="flex-1 flex flex-col">
                 <CardContent className="flex-1 flex flex-col p-0">
-                    <ScrollArea className="flex-1 p-4 lg:p-6" viewportRef={scrollViewportRef}>
+                    <ScrollArea className="flex-1 p-4 lg:p-6" viewportRef={scrollAreaRef}>
                         <div className="space-y-6">
                             {messages.map((msg, index) => (
                                 <div key={msg.id} className={`flex items-start gap-4 ${msg.isUser ? "justify-end" : ""}`}>
