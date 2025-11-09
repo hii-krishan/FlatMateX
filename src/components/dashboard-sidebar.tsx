@@ -11,7 +11,6 @@ import {
   ShoppingCart,
   HeartPulse,
   PartyPopper,
-  StickyNote,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -35,7 +34,6 @@ const navItems = [
   { href: '/dashboard/groceries', icon: ShoppingCart, label: 'Groceries' },
   { href: '/dashboard/wellness', icon: HeartPulse, label: 'Wellness' },
   { href: '/dashboard/events', icon: PartyPopper, label: 'Events' },
-  { href: '/dashboard/notes', icon: StickyNote, label: 'Notes' },
 ];
 
 export function DashboardSidebar() {

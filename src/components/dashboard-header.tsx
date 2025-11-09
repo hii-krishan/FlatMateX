@@ -10,7 +10,6 @@ import {
   ShoppingCart,
   HeartPulse,
   PartyPopper,
-  StickyNote,
   PanelLeft,
 } from 'lucide-react';
 
@@ -36,7 +35,6 @@ const pageTitles: { [key: string]: { title: string, icon: React.ElementType } } 
   '/dashboard/groceries': { title: 'Groceries & Chores', icon: ShoppingCart },
   '/dashboard/wellness': { title: 'Wellness Tracker', icon: HeartPulse },
   '/dashboard/events': { title: 'Event Planner', icon: PartyPopper },
-  '/dashboard/notes': { title: 'Shared Notes', icon: StickyNote },
 };
 
 export function DashboardHeader() {

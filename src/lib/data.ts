@@ -1,4 +1,4 @@
-import type { Expense, Task, Class, GroceryItem, Chore, MoodEntry, Event, Poll, Service, Note } from './types';
+import type { Expense, Task, Class, GroceryItem, Chore, MoodEntry, Event, Poll, Service } from './types';
 
 export const mockExpenses: Expense[] = [
   { id: '1', name: 'Monthly Rent', amount: 12000, category: 'Rent', date: '2024-07-01', paidBy: 'Alex' },
@@ -72,10 +72,4 @@ export const mockServices: Service[] = [
   { id: 's3', name: 'The Book Nook', type: 'Stationery', rating: 4.8, distance: '800m' },
   { id: 's4', 'name': 'City General Hospital', 'type': 'Hospital', 'rating': 4.6, 'distance': '2.5km' },
   { id: 's5', 'name': 'Central Bank ATM', 'type': 'ATM', 'rating': 4.0, 'distance': '300m' },
-];
-
-export const mockNotes: Note[] = [
-    { id: 'n1', content: 'Rent due on the 5th!', color: 'bg-yellow-200 dark:bg-yellow-800' },
-    { id: 'n2', content: 'Submit electricity bill receipt to owner by Friday.', color: 'bg-blue-200 dark:bg-blue-800' },
-    { id: 'n3', content: 'Group meeting for project at 6 PM.', color: 'bg-green-200 dark:bg-green-800' },
 ];

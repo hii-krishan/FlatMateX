@@ -62,9 +62,3 @@ export type Service = {
   rating: number;
   distance: string;
 };
-
-export type Note = {
-    id: string;
-    content: string;
-    color: string;
-};
