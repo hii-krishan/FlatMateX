@@ -1,0 +1,148 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's unique ID."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's profile picture."
+        }
+      },
+      "required": ["uid", "email"]
+    },
+    "note": {
+      "title": "Note",
+      "description": "A short text note.",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "color": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "authorId": { "type": "string" },
+        "author": { "type": "string" }
+      },
+      "required": ["content", "createdAt", "authorId"]
+    },
+    "expense": {
+      "title": "Expense",
+      "description": "An expense record.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string", "enum": ["Rent", "Bills", "Groceries", "Food", "Other"] },
+        "date": { "type": "string", "format": "date-time" },
+        "paidBy": { "type": "string" },
+        "flatmateId": { "type": "string" }
+      },
+      "required": ["name", "amount", "category", "date", "flatmateId"]
+    },
+    "groceryItem": {
+        "title": "Grocery Item",
+        "description": "An item on the grocery list.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "quantity": { "type": "number" },
+            "purchased": { "type": "boolean" },
+            "flatmateId": { "type": "string" }
+        },
+        "required": ["name", "quantity", "purchased", "flatmateId"]
+    },
+    "chore": {
+        "title": "Chore",
+        "description": "A chore to be done.",
+        "type": "object",
+        "properties": {
+            "name": { "type": "string" },
+            "assignedTo": { "type": "string" },
+            "completed": { "type": "boolean" },
+            "flatmateId": { "type": "string" }
+        },
+        "required": ["name", "assignedTo", "completed", "flatmateId"]
+    },
+    "event": {
+        "title": "Event",
+        "description": "A planned event.",
+        "type": "object",
+        "properties": {
+            "title": { "type": "string" },
+            "date": { "type": "string", "format": "date" },
+            "type": { "type": "string", "enum": ["Movie Night", "Birthday", "College Fest", "Outing"] },
+            "flatmateId": { "type": "string" }
+        },
+        "required": ["title", "date", "type", "flatmateId"]
+    },
+    "poll": {
+        "title": "Poll",
+        "description": "A poll for making decisions.",
+        "type": "object",
+        "properties": {
+            "question": { "type": "string" },
+            "options": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "text": { "type": "string" },
+                        "votes": { "type": "number" },
+                        "voters": { "type": "array", "items": { "type": "string" } }
+                    },
+                    "required": ["text", "votes", "voters"]
+                }
+            },
+            "flatmateId": { "type": "string" }
+        },
+        "required": ["question", "options", "flatmateId"]
+    }
+  },
+  "auth": {
+    "providers": ["email", "google"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/userProfile" },
+      "description": "Stores user profile information."
+    },
+    "/notes": {
+        "schema": { "$ref": "#/entities/note" },
+        "description": "Stores shared notes for all users."
+    },
+    "/expenses": {
+        "schema": { "$ref": "#/entities/expense" },
+        "description": "Stores expense records for all users."
+    },
+    "/groceries": {
+        "schema": { "$ref": "#/entities/groceryItem" },
+        "description": "Stores the shared grocery list."
+    },
+    "/chores": {
+        "schema": { "$ref": "#/entities/chore" },
+        "description": "Stores the shared chore list."
+    },
+    "/events": {
+        "schema": { "$ref": "#/entities/event" },
+        "description": "Stores planned events."
+    },
+    "/polls": {
+        "schema": { "$ref": "#/entities/poll" },
+        "description": "Stores polls for group decisions."
+    }
+  }
+}

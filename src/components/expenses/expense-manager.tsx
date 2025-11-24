@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useState, useMemo } from 'react';
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -10,40 +10,72 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { mockExpenses } from '@/lib/data';
+import { PlusCircle, Lightbulb, Trash2 } from 'lucide-react';
+import { useFirestore, useUser, useCollection } from '@/firebase';
+import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import type { Expense } from '@/lib/types';
-import { PlusCircle, Lightbulb } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 
 export function ExpenseManager() {
-  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
 
-  const dataByCategory = expenses.reduce((acc, expense) => {
-    const existing = acc.find(item => item.name === expense.category);
-    if (existing) {
-      existing.value += expense.amount;
-    } else {
-      acc.push({ name: expense.category, value: expense.amount });
-    }
-    return acc;
-  }, [] as { name: string, value: number }[]);
+  const expensesCollection = useMemo(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'expenses');
+  }, [firestore, user]);
 
-  const handleAddExpense = (e: React.FormEvent<HTMLFormElement>) => {
+  const { data: expenses, loading } = useCollection<Expense>(expensesCollection);
+
+  const dataByCategory = useMemo(() => {
+    if (!expenses) return [];
+    return expenses.reduce((acc, expense) => {
+      const existing = acc.find(item => item.name === expense.category);
+      if (existing) {
+        existing.value += expense.amount;
+      } else {
+        acc.push({ name: expense.category, value: expense.amount });
+      }
+      return acc;
+    }, [] as { name: string, value: number }[]);
+  }, [expenses]);
+
+  const handleAddExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!firestore || !user) return;
+
     const formData = new FormData(e.currentTarget);
-    const newExpense: Expense = {
-      id: (expenses.length + 1).toString(),
+    const newExpense: Omit<Expense, 'id'> = {
       name: formData.get('name') as string,
       amount: parseFloat(formData.get('amount') as string),
       category: formData.get('category') as Expense['category'],
       date: new Date().toISOString().split('T')[0],
-      paidBy: 'You',
+      paidBy: user.displayName || 'Me',
+      flatmateId: user.uid,
     };
-    setExpenses([...expenses, newExpense]);
-    setIsDialogOpen(false);
+
+    try {
+      await addDoc(collection(firestore, 'expenses'), newExpense);
+      toast({ title: 'Expense Added!' });
+      setIsDialogOpen(false);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
   };
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (!firestore) return;
+    try {
+      await deleteDoc(doc(firestore, 'expenses', expenseId));
+      toast({ title: 'Expense Deleted' });
+    } catch (error: any) {
+       toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -55,6 +87,7 @@ export function ExpenseManager() {
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
+              {loading ? <div className="h-full w-full flex items-center justify-center">Loading chart...</div> :
               <PieChart>
                 <Pie
                   data={dataByCategory}
@@ -73,6 +106,7 @@ export function ExpenseManager() {
                 <Tooltip formatter={(value: number) => `₹${value.toLocaleString()}`} />
                 <Legend />
               </PieChart>
+              }
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -146,16 +180,25 @@ export function ExpenseManager() {
                 <TableHead>Date</TableHead>
                 <TableHead>Paid By</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="w-[50px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {expenses.map((expense) => (
+              {loading && <TableRow><TableCell colSpan={6} className="text-center">Loading expenses...</TableCell></TableRow>}
+              {expenses?.map((expense) => (
                 <TableRow key={expense.id}>
                   <TableCell className="font-medium">{expense.name}</TableCell>
                   <TableCell><Badge variant="secondary">{expense.category}</Badge></TableCell>
-                  <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(expense.date as string).toLocaleDateString()}</TableCell>
                   <TableCell>{expense.paidBy}</TableCell>
                   <TableCell className="text-right font-mono">₹{expense.amount.toFixed(2)}</TableCell>
+                  <TableCell>
+                    {user?.uid === expense.flatmateId && (
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id!)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

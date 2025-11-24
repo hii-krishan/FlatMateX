@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { mockNotes } from '@/lib/data';
-import type { Note } from '@/lib/types';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,6 +14,10 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
+import { useFirestore, useCollection, useUser } from '@/firebase';
+import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import type { Note } from '@/lib/types';
+import { useMemo } from 'react';
 
 const noteColors = [
   'bg-yellow-200',
@@ -26,23 +28,38 @@ const noteColors = [
 ];
 
 export function NotesBoard() {
-  const [notes, setNotes] = useState<Note[]>(mockNotes);
   const [newNoteContent, setNewNoteContent] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const firestore = useFirestore();
+  const { user } = useUser();
 
-  const handleAddNote = () => {
-    if (newNoteContent.trim() === '') return;
+  const notesCollection = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'notes');
+  }, [firestore]);
 
-    const newNote: Note = {
-      id: `note-${Date.now()}`,
+  const { data: notes, loading } = useCollection<Note>(notesCollection);
+
+  const handleAddNote = async () => {
+    if (newNoteContent.trim() === '' || !firestore || !user) return;
+
+    const newNote = {
       content: newNoteContent,
       color: noteColors[Math.floor(Math.random() * noteColors.length)],
+      createdAt: serverTimestamp(),
+      author: user.displayName || 'Anonymous',
+      authorId: user.uid,
     };
 
-    setNotes([...notes, newNote]);
+    await addDoc(collection(firestore, 'notes'), newNote);
     setNewNoteContent('');
     setIsDialogOpen(false);
   };
+  
+  const handleDeleteNote = async (noteId: string) => {
+    if (!firestore) return;
+    await deleteDoc(doc(firestore, 'notes', noteId));
+  }
 
   return (
     <div className="p-4">
@@ -67,7 +84,7 @@ export function NotesBoard() {
               placeholder="Type your note here..."
               value={newNoteContent}
               onChange={(e) => setNewNoteContent(e.target.value)}
-              className="min-h-[120px] text-black"
+              className="min-h-[120px]"
             />
             <DialogFooter>
               <DialogClose asChild>
@@ -79,12 +96,25 @@ export function NotesBoard() {
         </Dialog>
       </div>
 
+      {loading && <p>Loading notes...</p>}
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {notes.map((note) => (
-          <Card key={note.id} className={`${note.color}`}>
+        {notes?.map((note) => (
+          <Card key={note.id} className={`${note.color} relative group`}>
             <CardContent className="p-4">
               <p className="text-black whitespace-pre-wrap">{note.content}</p>
+              <p className="text-xs text-black/60 mt-2">By {note.author}</p>
             </CardContent>
+            {user && user.uid === note.authorId && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 h-7 w-7 text-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => handleDeleteNote(note.id)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </Card>
         ))}
       </div>

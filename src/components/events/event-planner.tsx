@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,9 +8,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { mockEvents, mockPolls } from '@/lib/data';
+import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote, Trash2 } from 'lucide-react';
+import { useFirestore, useUser, useCollection } from '@/firebase';
+import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import type { Event, Poll } from '@/lib/types';
-import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
 
 const eventIcons = {
   'Movie Night': Film,
@@ -20,32 +23,73 @@ const eventIcons = {
 };
 
 export function EventPlanner() {
-  const [events, setEvents] = useState<Event[]>(mockEvents);
-  const [polls, setPolls] = useState<Poll[]>(mockPolls);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
+  const [isPollDialogOpen, setIsPollDialogOpen] = useState(false);
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const { toast } = useToast();
 
-  const handleCreateEvent = (e: React.FormEvent<HTMLFormElement>) => {
+  const eventsCollection = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'events');
+  }, [firestore]);
+  const { data: events, loading: eventsLoading } = useCollection<Event>(eventsCollection, {
+    orderBy: 'date',
+    direction: 'asc'
+  });
+  
+  const pollsCollection = useMemo(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'polls');
+  }, [firestore]);
+  const { data: polls, loading: pollsLoading } = useCollection<Poll>(pollsCollection);
+
+  const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!firestore || !user) return;
     const formData = new FormData(e.currentTarget);
-    const newEvent: Event = {
-      id: `evt-${Date.now()}`,
+    const newEvent: Omit<Event, 'id'> = {
       title: formData.get('title') as string,
       date: formData.get('date') as string,
       type: formData.get('type') as Event['type'],
+      flatmateId: user.uid
     };
-    setEvents([...events, newEvent].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-    setIsDialogOpen(false);
+    await addDoc(collection(firestore, 'events'), newEvent);
+    setIsEventDialogOpen(false);
+    toast({title: 'Event Created!'})
   };
   
-  const handleVote = (pollId: string, optionIndex: number) => {
-      setPolls(polls.map(p => {
-          if (p.id === pollId) {
-              const newOptions = [...p.options];
-              newOptions[optionIndex].votes += 1;
-              return {...p, options: newOptions};
-          }
-          return p;
-      }));
+  const handleVote = async (pollId: string, optionIndex: number) => {
+    if (!firestore || !user) return;
+    const pollDocRef = doc(firestore, "polls", pollId);
+    
+    // This is a bit complex, but it ensures a user can't vote multiple times on the same option
+    // and can change their vote. This would be easier with a transaction or backend logic.
+    // For client-side, this is a reasonable approach.
+    const poll = polls?.find(p => p.id === pollId);
+    if (!poll) return;
+
+    // Check if user has already voted for this option
+    if (poll.options[optionIndex].voters.includes(user.uid)) {
+      toast({ description: "You've already voted for this option." });
+      return;
+    }
+    
+    // Remove user's previous vote if any
+    const updates: { [key: string]: any } = {};
+    poll.options.forEach((opt, idx) => {
+      if (opt.voters.includes(user.uid)) {
+        updates[`options.${idx}.votes`] = opt.votes - 1;
+        updates[`options.${idx}.voters`] = arrayRemove(user.uid);
+      }
+    });
+
+    // Add new vote
+    updates[`options.${optionIndex}.votes`] = poll.options[optionIndex].votes + 1;
+    updates[`options.${optionIndex}.voters`] = arrayUnion(user.uid);
+
+    await updateDoc(pollDocRef, updates);
+    toast({ title: "Vote counted!" });
   }
 
   return (
@@ -57,7 +101,7 @@ export function EventPlanner() {
               <CardTitle className="font-headline">Upcoming Events</CardTitle>
               <CardDescription>Plan your movie nights, birthdays, and fests.</CardDescription>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isEventDialogOpen} onOpenChange={setIsEventDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <PlusCircle className="mr-2 h-4 w-4" /> Create Event
@@ -94,7 +138,8 @@ export function EventPlanner() {
             </Dialog>
           </CardHeader>
           <CardContent className="space-y-4">
-            {events.map(event => {
+            {eventsLoading && <p>Loading events...</p>}
+            {events?.map(event => {
                 const Icon = eventIcons[event.type];
                 const eventDate = new Date(event.date);
                 const isPast = eventDate < new Date();
@@ -122,7 +167,8 @@ export function EventPlanner() {
             <CardDescription>Decide on group activities together.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {polls.map(poll => {
+            {pollsLoading && <p>Loading polls...</p>}
+            {polls?.map(poll => {
                 const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
                 return (
                     <div key={poll.id} className="space-y-3">
@@ -130,11 +176,14 @@ export function EventPlanner() {
                         <div className="space-y-3">
                             {poll.options.map((option, index) => {
                                 const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                                const userVotedForThis = user && option.voters.includes(user.uid);
                                 return (
                                     <div key={index} className="space-y-1">
                                         <div className="flex justify-between items-center text-sm">
-                                            <span>{option.text}</span>
-                                            <Button size="sm" variant="outline" onClick={() => handleVote(poll.id, index)}>Vote</Button>
+                                            <span className={userVotedForThis ? 'font-bold text-primary' : ''}>{option.text}</span>
+                                            <Button size="sm" variant={userVotedForThis ? 'default' : 'outline'} onClick={() => handleVote(poll.id!, index)}>
+                                              {userVotedForThis ? 'Voted' : 'Vote'}
+                                            </Button>
                                         </div>
                                         <Progress value={percentage} />
                                         <span className="text-xs text-muted-foreground">{option.votes} votes</span>
