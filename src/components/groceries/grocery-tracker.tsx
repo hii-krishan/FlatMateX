@@ -143,11 +143,9 @@ export function GroceryTracker() {
                   {item.name}
                 </label>
                 <Badge variant="outline">{item.quantity} pc(s)</Badge>
-                
-                  <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGrocery(item.id!)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                
+                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGrocery(item.id!)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             ))}
           </div>
@@ -193,10 +191,9 @@ export function GroceryTracker() {
                 <Checkbox id={`c-${chore.id}`} checked={chore.completed} onCheckedChange={() => toggleChore( chore.id!, chore.completed)} />
                 <label htmlFor={`c-${chore.id}`} className={`flex-1 text-sm ${chore.completed ? 'line-through text-muted-foreground' : ''}`}>{chore.name}</label>
                 <Badge variant={chore.assignedTo === 'Unassigned' ? 'destructive' : 'default'}>{chore.assignedTo}</Badge>
-                
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditChoreClick(chore)}>
-                      <Pencil className="h-4 w-4" />
-                  </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditChoreClick(chore)}>
+                    <Pencil className="h-4 w-4" />
+                </Button>
               </div>
             ))}
           </CardContent>

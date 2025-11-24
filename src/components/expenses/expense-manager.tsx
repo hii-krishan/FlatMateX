@@ -191,11 +191,9 @@ export function ExpenseManager() {
                   <TableCell>{expense.paidBy}</TableCell>
                   <TableCell className="text-right font-mono">₹{expense.amount.toFixed(2)}</TableCell>
                   <TableCell>
-                    
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id!)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id!)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

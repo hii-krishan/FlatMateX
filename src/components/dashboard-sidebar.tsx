@@ -12,7 +12,6 @@ import {
   HeartPulse,
   PartyPopper,
   Settings,
-  LogOut,
   Home,
   StickyNote,
 } from 'lucide-react';
@@ -41,10 +40,6 @@ const navItems = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-
-  const handleLogout = async () => {
-    // No logout without auth
-  };
 
   return (
     <>
@@ -85,14 +80,6 @@ export function DashboardSidebar() {
               <Link href="#">
                 <Settings />
                 <span>Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} asChild tooltip={{ children: 'Logout' }} disabled>
-              <Link href="#">
-                <LogOut />
-                <span>Logout</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>

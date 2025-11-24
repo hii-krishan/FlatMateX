@@ -103,15 +103,14 @@ export function NotesBoard() {
               <p className="text-black whitespace-pre-wrap">{note.content}</p>
               <p className="text-xs text-black/60 mt-2">By {note.author}</p>
             </CardContent>
-            
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-2 right-2 h-7 w-7 text-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => handleDeleteNote(note.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 h-7 w-7 text-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => handleDeleteNote(note.id!)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </Card>
         ))}
       </div>

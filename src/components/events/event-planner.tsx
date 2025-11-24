@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote, Trash2 } from 'lucide-react';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
 import type { Event, Poll } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -56,39 +56,21 @@ export function EventPlanner() {
     setIsEventDialogOpen(false);
     toast({title: 'Event Created!'})
   };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!firestore) return;
+    await deleteDoc(doc(firestore, "events", eventId));
+    toast({ title: "Event deleted." });
+  }
   
   const handleVote = async (pollId: string, optionIndex: number) => {
     if (!firestore) return;
     const pollDocRef = doc(firestore, "polls", pollId);
-    
-    // This is a bit complex, but it ensures a user can't vote multiple times on the same option
-    // and can change their vote. This would be easier with a transaction or backend logic.
-    // For client-side, this is a reasonable approach.
     const poll = polls?.find(p => p.id === pollId);
     if (!poll) return;
-
-    // A user ID is required to track votes, but we have no users. For now, we use a random string.
-    const mockUserId = Math.random().toString(36).substring(7);
-
-    // Check if user has already voted for this option
-    if (poll.options[optionIndex].voters.includes(mockUserId)) {
-      toast({ description: "You've already voted for this option." });
-      return;
-    }
-    
-    // Remove user's previous vote if any
+    // Since there is no auth, we can't properly track votes. We'll just increment.
     const updates: { [key: string]: any } = {};
-    poll.options.forEach((opt, idx) => {
-      if (opt.voters.includes(mockUserId)) {
-        updates[`options.${idx}.votes`] = opt.votes - 1;
-        updates[`options.${idx}.voters`] = arrayRemove(mockUserId);
-      }
-    });
-
-    // Add new vote
     updates[`options.${optionIndex}.votes`] = poll.options[optionIndex].votes + 1;
-    updates[`options.${optionIndex}.voters`] = arrayUnion(mockUserId);
-
     await updateDoc(pollDocRef, updates);
     toast({ title: "Vote counted!" });
   }
@@ -145,7 +127,7 @@ export function EventPlanner() {
                 const eventDate = new Date(event.date);
                 const isPast = eventDate < new Date();
                 return (
-                    <div key={event.id} className={`flex items-center space-x-4 rounded-lg border p-4 ${isPast ? 'opacity-50' : ''}`}>
+                    <div key={event.id} className={`flex items-center space-x-4 rounded-lg border p-4 group ${isPast ? 'opacity-50' : ''}`}>
                         <div className="flex-shrink-0 bg-muted rounded-lg p-3">
                            <Icon className="h-6 w-6 text-muted-foreground" />
                         </div>
@@ -153,7 +135,12 @@ export function EventPlanner() {
                             <p className="font-semibold">{event.title}</p>
                             <p className="text-sm text-muted-foreground">{eventDate.toDateString()}</p>
                         </div>
-                        {!isPast && <div className="text-sm text-primary font-medium">Upcoming</div>}
+                        {isPast ? 
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={() => handleDeleteEvent(event.id!)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button> :
+                          <div className="text-sm text-primary font-medium">Upcoming</div>
+                        }
                     </div>
                 );
             })}
@@ -177,13 +164,12 @@ export function EventPlanner() {
                         <div className="space-y-3">
                             {poll.options.map((option, index) => {
                                 const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
-                                const userVotedForThis = false; // Cannot determine without user
                                 return (
                                     <div key={index} className="space-y-1">
                                         <div className="flex justify-between items-center text-sm">
-                                            <span className={userVotedForThis ? 'font-bold text-primary' : ''}>{option.text}</span>
-                                            <Button size="sm" variant={userVotedForThis ? 'default' : 'outline'} onClick={() => handleVote(poll.id!, index)}>
-                                              {userVotedForThis ? 'Voted' : 'Vote'}
+                                            <span>{option.text}</span>
+                                            <Button size="sm" variant='outline' onClick={() => handleVote(poll.id!, index)}>
+                                              Vote
                                             </Button>
                                         </div>
                                         <Progress value={percentage} />

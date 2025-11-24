@@ -45,10 +45,6 @@ export function DashboardHeader() {
   
   const { title, icon: Icon } = pageTitles[pathname] || { title: 'Dashboard', icon: LayoutDashboard };
 
-  const handleLogout = async () => {
-    // Logout logic is removed as there is no login
-  };
-
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
       <Button
@@ -72,7 +68,7 @@ export function DashboardHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-9 w-9 rounded-full">
               <Avatar className="h-9 w-9">
-                <AvatarImage src={undefined} alt="User Avatar" />
+                <AvatarImage src="https://picsum.photos/seed/user-avatar/100" alt="User Avatar" />
                 <AvatarFallback>{'U'}</AvatarFallback>
               </Avatar>
             </Button>
@@ -82,8 +78,6 @@ export function DashboardHeader() {
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled>Settings</DropdownMenuItem>
             <DropdownMenuItem disabled>Support</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} disabled>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
