@@ -1,3 +1,4 @@
+
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -12,6 +13,8 @@ import {
   PartyPopper,
   PanelLeft,
   StickyNote,
+  LogOut,
+  Pencil,
 } from 'lucide-react';
 
 import {
@@ -74,10 +77,17 @@ export function DashboardHeader() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{'My Account'}</DropdownMenuLabel>
+            <DropdownMenuLabel className="flex items-center gap-2">
+                User
+                <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Pencil className="h-4 w-4" />
+                </Button>
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>Settings</DropdownMenuItem>
-            <DropdownMenuItem disabled>Support</DropdownMenuItem>
+            <DropdownMenuItem>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

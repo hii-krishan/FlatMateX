@@ -5,11 +5,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote, Trash2 } from 'lucide-react';
+import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote, Trash2, Pencil } from 'lucide-react';
 import { mockEvents, mockPolls } from '@/lib/data';
 import type { Event, Poll, PollOption } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,7 @@ const eventIcons = {
 export function EventPlanner() {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isPollDialogOpen, setIsPollDialogOpen] = useState(false);
+  const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
   const [events, setEvents] = useState<Event[]>(mockEvents);
   const [polls, setPolls] = useState<Poll[]>(mockPolls);
   const { toast } = useToast();
@@ -66,7 +67,30 @@ export function EventPlanner() {
     toast({ title: "Vote counted!" });
   }
 
+  const handleEditPollClick = (poll: Poll) => {
+    setEditingPoll(poll);
+    setIsPollDialogOpen(true);
+  };
+  
+  const handleSavePoll = (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!editingPoll) return;
+  
+      const formData = new FormData(e.currentTarget);
+      const updatedPoll: Poll = {
+          ...editingPoll,
+          question: formData.get('pollQuestion') as string,
+      };
+      
+      setPolls(prev => prev.map(p => p.id === editingPoll.id ? updatedPoll : p));
+      setEditingPoll(null);
+      setIsPollDialogOpen(false);
+      toast({ title: 'Poll updated!' });
+  };
+
+
   return (
+    <>
     <div className="grid md:grid-cols-2 gap-6">
       <div>
         <Card>
@@ -150,7 +174,12 @@ export function EventPlanner() {
                 const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
                 return (
                     <div key={poll.id} className="space-y-3">
-                        <p className="font-semibold">{poll.question}</p>
+                        <div className="flex justify-between items-start">
+                            <p className="font-semibold">{poll.question}</p>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditPollClick(poll)}>
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                        </div>
                         <div className="space-y-3">
                             {poll.options.map((option, index) => {
                                 const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
@@ -176,5 +205,26 @@ export function EventPlanner() {
         </Card>
       </div>
     </div>
+
+    <Dialog open={isPollDialogOpen} onOpenChange={setIsPollDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Edit Poll</DialogTitle>
+            </DialogHeader>
+            {editingPoll && (
+            <form onSubmit={handleSavePoll} className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="pollQuestion">Poll Question</Label>
+                    <Input id="pollQuestion" name="pollQuestion" defaultValue={editingPoll.question} required />
+                </div>
+                <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setIsPollDialogOpen(false)}>Cancel</Button>
+                    <Button type="submit">Save Changes</Button>
+                </DialogFooter>
+            </form>
+            )}
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }

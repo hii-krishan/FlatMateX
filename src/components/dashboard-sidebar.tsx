@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -14,6 +15,7 @@ import {
   Settings,
   Home,
   StickyNote,
+  Quote,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -74,16 +76,12 @@ export function DashboardSidebar() {
 
       <SidebarFooter className="p-2">
         <SidebarSeparator />
-        <SidebarMenu>
-          <SidebarMenuItem>
-             <SidebarMenuButton asChild tooltip={{ children: 'Settings' }}>
-              <Link href="#">
-                <Settings />
-                <span>Settings</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="p-2 text-sm text-muted-foreground group-[[data-collapsible=icon]]:hidden">
+            <div className="flex items-center gap-2">
+                <Quote className="h-4 w-4 shrink-0" />
+                <p className="italic">"The best way to predict the future is to create it."</p>
+            </div>
+        </div>
       </SidebarFooter>
     </>
   );
