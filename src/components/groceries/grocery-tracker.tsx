@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -14,6 +15,8 @@ import { useFirestore, useCollection } from '@/firebase';
 import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { GroceryItem, Chore } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 export function GroceryTracker() {
@@ -66,35 +69,73 @@ export function GroceryTracker() {
   }, [groceries]);
 
   const addGrocery = async () => {
-    if (newGrocery.trim() && firestore) {
+    if (newGrocery.trim() && firestore && groceriesCollection) {
       const item: Omit<GroceryItem, 'id'> = { 
         name: newGrocery.trim(), 
         quantity: newGroceryQty, 
         purchased: false,
       };
-      await addDoc(collection(firestore, 'groceries'), item);
-      setNewGrocery('');
-      setNewGroceryQty(1);
-      toast({ title: 'Grocery item added!' });
+      addDoc(groceriesCollection, item)
+        .then(() => {
+          setNewGrocery('');
+          setNewGroceryQty(1);
+          toast({ title: 'Grocery item added!' });
+        })
+        .catch(async (serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: groceriesCollection.path,
+            operation: 'create',
+            requestResourceData: item,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        });
     }
   };
 
   const toggleGrocery = async (id: string, currentStatus: boolean) => {
     if (!firestore) return;
     const itemDoc = doc(firestore, 'groceries', id);
-    await updateDoc(itemDoc, { purchased: !currentStatus });
+    const update = { purchased: !currentStatus };
+    updateDoc(itemDoc, update)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: itemDoc.path,
+          operation: 'update',
+          requestResourceData: update,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const deleteGrocery = async (id: string) => {
     if (!firestore) return;
-    await deleteDoc(doc(firestore, 'groceries', id));
-    toast({ title: 'Grocery item deleted.' });
+    const itemDoc = doc(firestore, 'groceries', id);
+    deleteDoc(itemDoc)
+      .then(() => {
+        toast({ title: 'Grocery item deleted.' });
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: itemDoc.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   }
   
   const toggleChore = async (id: string, currentStatus: boolean) => {
     if (!firestore) return;
     const choreDoc = doc(firestore, 'chores', id);
-    await updateDoc(choreDoc, { completed: !currentStatus });
+    const update = { completed: !currentStatus };
+    updateDoc(choreDoc, update)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: choreDoc.path,
+          operation: 'update',
+          requestResourceData: update,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const handleEditChoreClick = (chore: Chore) => {
@@ -113,11 +154,20 @@ export function GroceryTracker() {
     };
     
     const choreDoc = doc(firestore, 'chores', editingChore.id!);
-    await updateDoc(choreDoc, updatedChore);
-
-    setEditingChore(null);
-    setIsChoreDialogOpen(false);
-    toast({ title: 'Chore updated!' });
+    updateDoc(choreDoc, updatedChore)
+      .then(() => {
+        setEditingChore(null);
+        setIsChoreDialogOpen(false);
+        toast({ title: 'Chore updated!' });
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: choreDoc.path,
+          operation: 'update',
+          requestResourceData: updatedChore,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   return (

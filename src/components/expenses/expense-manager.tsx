@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -15,6 +16,9 @@ import { useFirestore, useCollection } from '@/firebase';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import type { Expense } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 
@@ -45,7 +49,7 @@ export function ExpenseManager() {
 
   const handleAddExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!firestore) return;
+    if (!firestore || !expensesCollection) return;
 
     const formData = new FormData(e.currentTarget);
     const newExpense: Omit<Expense, 'id'> = {
@@ -56,23 +60,35 @@ export function ExpenseManager() {
       paidBy: 'Me',
     };
 
-    try {
-      await addDoc(collection(firestore, 'expenses'), newExpense);
-      toast({ title: 'Expense Added!' });
-      setIsDialogOpen(false);
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Error', description: error.message });
-    }
+    addDoc(expensesCollection, newExpense)
+      .then(() => {
+        toast({ title: 'Expense Added!' });
+        setIsDialogOpen(false);
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: expensesCollection.path,
+          operation: 'create',
+          requestResourceData: newExpense,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const handleDeleteExpense = async (expenseId: string) => {
     if (!firestore) return;
-    try {
-      await deleteDoc(doc(firestore, 'expenses', expenseId));
-      toast({ title: 'Expense Deleted' });
-    } catch (error: any) {
-       toast({ variant: 'destructive', title: 'Error', description: error.message });
-    }
+    const expenseRef = doc(firestore, 'expenses', expenseId);
+    deleteDoc(expenseRef)
+      .then(() => {
+        toast({ title: 'Expense Deleted' });
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: expenseRef.path,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   }
 
   return (

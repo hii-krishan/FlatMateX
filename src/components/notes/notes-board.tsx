@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +18,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import type { Note } from '@/lib/types';
-import { useMemo } from 'react';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 const noteColors = [
   'bg-yellow-200',
@@ -48,15 +51,32 @@ export function NotesBoard() {
       createdAt: serverTimestamp(),
       author: 'Anonymous',
     };
+    
+    if (!notesCollection) return;
 
-    await addDoc(collection(firestore, 'notes'), newNote);
+    addDoc(notesCollection, newNote).catch(async (serverError) => {
+      const permissionError = new FirestorePermissionError({
+          path: notesCollection.path,
+          operation: 'create',
+          requestResourceData: newNote,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    });
+
     setNewNoteContent('');
     setIsDialogOpen(false);
   };
   
   const handleDeleteNote = async (noteId: string) => {
     if (!firestore) return;
-    await deleteDoc(doc(firestore, 'notes', noteId));
+    const noteRef = doc(firestore, 'notes', noteId);
+    deleteDoc(noteRef).catch(async (serverError) => {
+      const permissionError = new FirestorePermissionError({
+          path: noteRef.path,
+          operation: 'delete',
+      });
+      errorEmitter.emit('permission-error', permissionError);
+    });
   }
 
   return (

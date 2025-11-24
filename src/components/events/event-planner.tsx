@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -13,6 +14,8 @@ import { useFirestore, useCollection } from '@/firebase';
 import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
 import type { Event, Poll } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 const eventIcons = {
@@ -45,22 +48,42 @@ export function EventPlanner() {
 
   const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!firestore) return;
+    if (!firestore || !eventsCollection) return;
     const formData = new FormData(e.currentTarget);
     const newEvent: Omit<Event, 'id'> = {
       title: formData.get('title') as string,
       date: formData.get('date') as string,
       type: formData.get('type') as Event['type'],
     };
-    await addDoc(collection(firestore, 'events'), newEvent);
-    setIsEventDialogOpen(false);
-    toast({title: 'Event Created!'})
+    addDoc(eventsCollection, newEvent)
+      .then(() => {
+        setIsEventDialogOpen(false);
+        toast({title: 'Event Created!'})
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: eventsCollection.path,
+            operation: 'create',
+            requestResourceData: newEvent,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   };
 
   const handleDeleteEvent = async (eventId: string) => {
     if (!firestore) return;
-    await deleteDoc(doc(firestore, "events", eventId));
-    toast({ title: "Event deleted." });
+    const eventRef = doc(firestore, "events", eventId);
+    deleteDoc(eventRef)
+      .then(() => {
+        toast({ title: "Event deleted." });
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: eventRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   }
   
   const handleVote = async (pollId: string, optionIndex: number) => {
@@ -68,11 +91,22 @@ export function EventPlanner() {
     const pollDocRef = doc(firestore, "polls", pollId);
     const poll = polls?.find(p => p.id === pollId);
     if (!poll) return;
-    // Since there is no auth, we can't properly track votes. We'll just increment.
+    
     const updates: { [key: string]: any } = {};
     updates[`options.${optionIndex}.votes`] = poll.options[optionIndex].votes + 1;
-    await updateDoc(pollDocRef, updates);
-    toast({ title: "Vote counted!" });
+    
+    updateDoc(pollDocRef, updates)
+      .then(() => {
+        toast({ title: "Vote counted!" });
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: pollDocRef.path,
+            operation: 'update',
+            requestResourceData: updates,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
   }
 
   return (

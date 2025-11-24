@@ -1,8 +1,11 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { onSnapshot, type Query, type DocumentData, type QuerySnapshot } from 'firebase/firestore';
 import type { FirestoreDocument } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 interface UseCollectionOptions {
   orderBy?: string;
@@ -36,8 +39,12 @@ export function useCollection<T extends DocumentData>(
         setLoading(false);
       },
       (err) => {
-        console.error("Error fetching collection:", err);
-        setError(err);
+        const permissionError = new FirestorePermissionError({
+            path: query.path,
+            operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
         setLoading(false);
       }
     );

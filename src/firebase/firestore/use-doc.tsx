@@ -1,8 +1,11 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { onSnapshot, type DocumentReference, type DocumentData } from 'firebase/firestore';
 import type { FirestoreDocument } from '@/lib/types';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export function useDoc<T extends DocumentData>(
   docRef: DocumentReference<T> | null
@@ -30,8 +33,12 @@ export function useDoc<T extends DocumentData>(
         setLoading(false);
       },
       (err) => {
-        console.error("Error fetching document:", err);
-        setError(err);
+        const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        setError(permissionError);
         setLoading(false);
       }
     );
