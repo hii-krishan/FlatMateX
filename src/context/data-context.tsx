@@ -43,6 +43,7 @@ interface DataContextType {
   updateTimetable: (classItem: Class) => void;
 
   moodData: MoodEntry[];
+  updateMoodEntry: (id: string, data: Partial<MoodEntry>) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -144,6 +145,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const voteOnPoll = (pollId: string, optionIndex: number) => {
     setPolls(prevPolls => prevPolls.map(poll => {
       if (poll.id === pollId) {
+        // Prevent user from voting multiple times - for now, anyone can vote multiple times.
         const newOptions = poll.options.map((option, idx) => {
           if (idx === optionIndex) {
             return { ...option, votes: option.votes + 1 };
@@ -156,6 +158,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }));
     toast({ title: "Vote counted!" });
   };
+  
 
   const addNote = (note: Omit<Note, 'id' | 'authorId' | 'author'| 'color'| 'createdAt'>) => {
     const newNote: Note = {
@@ -166,7 +169,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       color: noteColors[Math.floor(Math.random() * noteColors.length)],
       createdAt: new Date(),
     };
-    setNotes(prev => [...prev, newNote]);
+    setNotes(prev => [newNote, ...prev]);
   };
 
   const deleteNote = (id: string) => {
@@ -190,6 +193,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setTimetable(prev => prev.map(c => c.id === classItem.id ? classItem : c));
   };
 
+  const updateMoodEntry = (id: string, data: Partial<MoodEntry>) => {
+    setMoodData(prev => prev.map(entry => entry.id === id ? { ...entry, ...data } : entry));
+    toast({ title: "Sleep data updated!" });
+  }
+
   return (
     <DataContext.Provider value={{
       user, updateUser,
@@ -201,7 +209,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       notes, addNote, deleteNote,
       tasks, addTask, toggleTask,
       timetable, updateTimetable,
-      moodData
+      moodData, updateMoodEntry
     }}>
       {children}
     </DataContext.Provider>

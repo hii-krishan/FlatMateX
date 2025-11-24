@@ -10,23 +10,28 @@ import { Slider } from "@/components/ui/slider";
 import { getSelfCareAdvice } from '@/ai/flows/mood-based-self-care-advice';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
 import type { MoodEntry } from '@/lib/types';
-import { HeartPulse, Loader2, Sparkles } from 'lucide-react';
+import { HeartPulse, Loader2, Sparkles, Pencil } from 'lucide-react';
 import { useData } from '@/context/data-context';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 const moodOptions: MoodEntry['mood'][] = ['Happy', 'Calm', 'Productive', 'Stressed', 'Sad'];
 const productivityOptions: MoodEntry['productivity'][] = ['High', 'Medium', 'Low'];
 
 export function MoodTracker() {
-  const { moodData } = useData();
+  const { moodData, updateMoodEntry } = useData();
   const [mood, setMood] = useState<MoodEntry['mood']>('Calm');
   const [sleepHours, setSleepHours] = useState(7);
   const [productivity, setProductivity] = useState<MoodEntry['productivity']>('Medium');
   const [advice, setAdvice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [isSleepDialogOpen, setIsSleepDialogOpen] = useState(false);
+
   const moodChartData = moodData.map(d => ({
       date: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' }),
       sleep: d.sleepHours,
+      id: d.id,
+      fullDate: d.date,
   }));
 
   const handleSubmit = async () => {
@@ -42,8 +47,22 @@ export function MoodTracker() {
       setIsLoading(false);
     }
   };
+  
+  const handleSleepUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    moodData.forEach(entry => {
+        const newHours = formData.get(`sleep-${entry.id}`);
+        if(newHours !== null) {
+            updateMoodEntry(entry.id!, { sleepHours: parseFloat(newHours as string) });
+        }
+    });
+    setIsSleepDialogOpen(false);
+  };
+
 
   return (
+    <>
     <div className="grid md:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
@@ -99,9 +118,44 @@ export function MoodTracker() {
         )}
 
         <Card>
-          <CardHeader>
-            <CardTitle className="font-headline">Sleep This Week</CardTitle>
-            <CardDescription>Your sleep patterns over the last 7 days.</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="font-headline">Sleep This Week</CardTitle>
+              <CardDescription>Your sleep patterns over the last 7 days.</CardDescription>
+            </div>
+             <Dialog open={isSleepDialogOpen} onOpenChange={setIsSleepDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <Pencil className="h-4 w-4"/>
+                    </Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Sleep Timings</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSleepUpdate} className="space-y-4">
+                        {moodData.map(entry => (
+                             <div key={entry.id} className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor={`sleep-${entry.id}`} className="text-right">
+                                    {new Date(entry.date).toLocaleDateString('en-US', { weekday: 'long' })}
+                                </Label>
+                                <Input
+                                    id={`sleep-${entry.id}`}
+                                    name={`sleep-${entry.id}`}
+                                    type="number"
+                                    defaultValue={entry.sleepHours}
+                                    step="0.5"
+                                    className="col-span-2"
+                                />
+                            </div>
+                        ))}
+                         <DialogFooter>
+                            <Button type="button" variant="ghost" onClick={() => setIsSleepDialogOpen(false)}>Cancel</Button>
+                            <Button type="submit">Save Changes</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+             </Dialog>
           </CardHeader>
           <CardContent className="h-60">
             <ResponsiveContainer width="100%" height="100%">
@@ -117,7 +171,6 @@ export function MoodTracker() {
         </Card>
       </div>
     </div>
+    </>
   );
 }
-
-    
