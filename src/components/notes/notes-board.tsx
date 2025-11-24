@@ -15,42 +15,19 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { mockNotes } from '@/lib/data';
-import type { Note } from '@/lib/types';
-
-const noteColors = [
-  'bg-yellow-200',
-  'bg-green-200',
-  'bg-blue-200',
-  'bg-pink-200',
-  'bg-purple-200',
-];
+import { useData } from '@/context/data-context';
 
 export function NotesBoard() {
+  const { notes, addNote, deleteNote } = useData();
   const [newNoteContent, setNewNoteContent] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [notes, setNotes] = useState<Note[]>(mockNotes);
 
   const handleAddNote = () => {
     if (newNoteContent.trim() === '') return;
-
-    const newNote: Note = {
-      id: `note-${Date.now()}`,
-      content: newNoteContent,
-      author: 'Anonymous',
-      authorId: 'user-1',
-      color: noteColors[Math.floor(Math.random() * noteColors.length)],
-      createdAt: new Date(),
-    };
-
-    setNotes(prev => [...prev, newNote]);
+    addNote({ content: newNoteContent });
     setNewNoteContent('');
     setIsDialogOpen(false);
   };
-  
-  const handleDeleteNote = (noteId: string) => {
-    setNotes(prev => prev.filter(note => note.id !== noteId));
-  }
 
   return (
     <div className="p-4">
@@ -100,7 +77,7 @@ export function NotesBoard() {
               variant="ghost"
               size="icon"
               className="absolute top-2 right-2 h-7 w-7 text-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => handleDeleteNote(note.id!)}
+              onClick={() => deleteNote(note.id!)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -110,3 +87,5 @@ export function NotesBoard() {
     </div>
   );
 }
+
+    

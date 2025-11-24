@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -11,23 +11,19 @@ import { Plus, Sparkles, Trash2, Loader2, Pencil } from 'lucide-react';
 import { getSmartGrocerySuggestions } from '@/ai/flows/smart-grocery-suggestions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from "@/components/ui/label";
-import { mockGroceryList, mockChoreList } from '@/lib/data';
-import { useToast } from '@/hooks/use-toast';
-import type { GroceryItem, Chore } from '@/lib/types';
+import { useData } from '@/context/data-context';
+import type { Chore } from '@/lib/types';
 
 
 export function GroceryTracker() {
-  const [newGrocery, setNewGrocery] = useState('');
+  const { groceries, addGrocery, toggleGrocery, deleteGrocery, chores, updateChore, toggleChore: toggleChoreContext } = useData();
+
+  const [newGroceryName, setNewGroceryName] = useState('');
   const [newGroceryQty, setNewGroceryQty] = useState(1);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [isChoreDialogOpen, setIsChoreDialogOpen] = useState(false);
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
-
-  const [groceries, setGroceries] = useState<GroceryItem[]>(mockGroceryList);
-  const [chores, setChores] = useState<Chore[]>(mockChoreList);
-
-  const { toast } = useToast();
 
   const fetchSuggestions = async () => {
     if (!groceries) return;
@@ -50,37 +46,17 @@ export function GroceryTracker() {
 
   useEffect(() => {
     fetchSuggestions();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groceries]);
 
-  const addGrocery = async () => {
-    if (newGrocery.trim()) {
-      const item: GroceryItem = { 
-        id: `groc-${Date.now()}`,
-        name: newGrocery.trim(), 
-        quantity: newGroceryQty, 
-        purchased: false,
-        flatmateId: 'user-1',
-      };
-      setGroceries(prev => [...prev, item]);
-      setNewGrocery('');
+  const handleAddGrocery = () => {
+    if (newGroceryName.trim()) {
+      addGrocery({ name: newGroceryName.trim(), quantity: newGroceryQty });
+      setNewGroceryName('');
       setNewGroceryQty(1);
-      toast({ title: 'Grocery item added!' });
     }
   };
-
-  const toggleGrocery = async (id: string, currentStatus: boolean) => {
-    setGroceries(prev => prev.map(g => g.id === id ? { ...g, purchased: !currentStatus } : g));
-  };
-
-  const deleteGrocery = async (id: string) => {
-    setGroceries(prev => prev.filter(g => g.id !== id));
-    toast({ title: 'Grocery item deleted.' });
-  }
   
-  const toggleChore = async (id: string, currentStatus: boolean) => {
-    setChores(prev => prev.map(c => c.id === id ? { ...c, completed: !currentStatus } : c));
-  };
-
   const handleEditChoreClick = (chore: Chore) => {
     setEditingChore(chore);
     setIsChoreDialogOpen(true);
@@ -92,17 +68,14 @@ export function GroceryTracker() {
 
     const formData = new FormData(e.currentTarget);
     const updatedChore: Chore = {
-        id: editingChore.id,
+        ...editingChore,
         name: formData.get('choreName') as string,
         assignedTo: formData.get('assignedTo') as string,
-        completed: editingChore.completed,
-        flatmateId: 'user-1',
     };
     
-    setChores(prev => prev.map(c => c.id === editingChore.id ? updatedChore : c));
+    updateChore(updatedChore);
     setEditingChore(null);
     setIsChoreDialogOpen(false);
-    toast({ title: 'Chore updated!' });
   };
 
   return (
@@ -115,15 +88,15 @@ export function GroceryTracker() {
         </CardHeader>
         <CardContent>
           <div className="flex w-full items-center space-x-2 mb-4">
-            <Input placeholder="e.g., Apples" value={newGrocery} onChange={e => setNewGrocery(e.target.value)} onKeyDown={e => e.key === 'Enter' && addGrocery()} className="flex-grow" />
+            <Input placeholder="e.g., Apples" value={newGroceryName} onChange={e => setNewGroceryName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAddGrocery()} className="flex-grow" />
             <Input type="number" min="1" value={newGroceryQty} onChange={e => setNewGroceryQty(parseInt(e.target.value))} className="w-20" />
-            <Button onClick={addGrocery}><Plus className="mr-2 h-4 w-4" /> Add</Button>
+            <Button onClick={handleAddGrocery}><Plus className="mr-2 h-4 w-4" /> Add</Button>
           </div>
           <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
             {groceries.length === 0 && <p>No groceries in the list.</p>}
             {groceries.map(item => (
               <div key={item.id} className="flex items-center space-x-3 rounded-md border p-3 group">
-                <Checkbox id={`g-${item.id}`} checked={item.purchased} onCheckedChange={() => toggleGrocery(item.id!, item.purchased)} />
+                <Checkbox id={`g-${item.id}`} checked={item.purchased} onCheckedChange={() => toggleGrocery(item.id!)} />
                 <label htmlFor={`g-${item.id}`} className={`flex-1 text-sm ${item.purchased ? 'line-through text-muted-foreground' : ''}`}>
                   {item.name}
                 </label>
@@ -153,7 +126,7 @@ export function GroceryTracker() {
               <ul className="space-y-2">
                 {suggestions.map((s, i) => (
                   <li key={i} className="flex items-center text-sm">
-                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setNewGrocery(s)}>
+                    <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setNewGroceryName(s)}>
                       <Plus className="h-4 w-4 mr-2 text-primary" /> {s}
                     </Button>
                   </li>
@@ -173,7 +146,7 @@ export function GroceryTracker() {
             {chores.length === 0 && <p>No chores assigned.</p>}
             {chores.map(chore => (
               <div key={chore.id} className="flex items-center space-x-3 rounded-md border p-3">
-                <Checkbox id={`c-${chore.id}`} checked={chore.completed} onCheckedChange={() => toggleChore( chore.id!, chore.completed)} />
+                <Checkbox id={`c-${chore.id}`} checked={chore.completed} onCheckedChange={() => toggleChoreContext( chore.id!)} />
                 <label htmlFor={`c-${chore.id}`} className={`flex-1 text-sm ${chore.completed ? 'line-through text-muted-foreground' : ''}`}>{chore.name}</label>
                 <Badge variant={chore.assignedTo === 'Unassigned' ? 'destructive' : 'default'}>{chore.assignedTo}</Badge>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditChoreClick(chore)}>
@@ -212,3 +185,5 @@ export function GroceryTracker() {
     </>
   );
 }
+
+    

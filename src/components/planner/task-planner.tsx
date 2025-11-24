@@ -7,36 +7,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mockTasks, mockTimetable } from '@/lib/data';
 import type { Task, Class } from '@/lib/types';
 import { Plus, Bell, CalendarDays, ListChecks, Pencil } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useData } from '@/context/data-context';
 
 const daysOfWeek: Class['day'][] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 export function TaskPlanner() {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
-  const [newTask, setNewTask] = useState('');
-  const [timetable, setTimetable] = useState<Class[]>(mockTimetable);
+  const { tasks, addTask, toggleTask, timetable, updateTimetable } = useData();
+  const [newTaskTitle, setNewTaskTitle] = useState('');
   const [isClassDialogOpen, setIsClassDialogOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
 
   const handleAddTask = () => {
-    if (newTask.trim()) {
-      const task: Task = {
-        id: `task-${Date.now()}`,
-        title: newTask.trim(),
-        completed: false,
-      };
-      setTasks([...tasks, task]);
-      setNewTask('');
+    if (newTaskTitle.trim()) {
+      addTask({ title: newTaskTitle.trim() });
+      setNewTaskTitle('');
     }
-  };
-
-  const toggleTask = (taskId: string) => {
-    setTasks(tasks.map(t => t.id === taskId ? { ...t, completed: !t.completed } : t));
   };
 
   const handleEditClassClick = (classItem: Class) => {
@@ -56,7 +46,7 @@ export function TaskPlanner() {
       day: formData.get('classDay') as Class['day'],
     };
 
-    setTimetable(timetable.map(c => c.id === updatedClass.id ? updatedClass : c));
+    updateTimetable(updatedClass);
     setEditingClass(null);
     setIsClassDialogOpen(false);
   };
@@ -86,8 +76,8 @@ export function TaskPlanner() {
             <div className="flex w-full items-center space-x-2">
               <Input 
                 placeholder="Add a new task..." 
-                value={newTask}
-                onChange={(e) => setNewTask(e.target.value)}
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
               />
               <Button onClick={handleAddTask}><Plus className="mr-2 h-4 w-4" /> Add Task</Button>
@@ -98,7 +88,7 @@ export function TaskPlanner() {
                   <Checkbox 
                     id={`task-${task.id}`} 
                     checked={task.completed}
-                    onCheckedChange={() => toggleTask(task.id)}
+                    onCheckedChange={() => toggleTask(task.id!)}
                   />
                   <label 
                     htmlFor={`task-${task.id}`}
@@ -188,3 +178,5 @@ export function TaskPlanner() {
     </>
   );
 }
+
+    

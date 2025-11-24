@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,18 +12,16 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Lightbulb, Trash2 } from 'lucide-react';
-import { mockExpenses } from '@/lib/data';
 import type { Expense } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
+import { useData } from '@/context/data-context';
+
 
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 
 export function ExpenseManager() {
+  const { expenses, addExpense, deleteExpense } = useData();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
-  const { toast } = useToast();
-
-
+  
   const dataByCategory = useMemo(() => {
     return expenses.reduce((acc, expense) => {
       const existing = acc.find(item => item.name === expense.category);
@@ -40,26 +38,16 @@ export function ExpenseManager() {
     e.preventDefault();
 
     const formData = new FormData(e.currentTarget);
-    const newExpense: Expense = {
-      id: `exp-${Date.now()}`,
+    const newExpense: Omit<Expense, 'id' | 'flatmateId' | 'date' | 'paidBy'> = {
       name: formData.get('name') as string,
       amount: parseFloat(formData.get('amount') as string),
       category: formData.get('category') as Expense['category'],
-      date: new Date().toISOString().split('T')[0],
-      paidBy: 'Me',
-      flatmateId: 'user-1',
     };
 
-    setExpenses(prev => [...prev, newExpense]);
-    toast({ title: 'Expense Added!' });
+    addExpense(newExpense);
     setIsDialogOpen(false);
     e.currentTarget.reset();
   };
-
-  const handleDeleteExpense = (expenseId: string) => {
-    setExpenses(prev => prev.filter(exp => exp.id !== expenseId));
-    toast({ title: 'Expense Deleted' });
-  }
 
   return (
     <div className="space-y-6">
@@ -177,7 +165,7 @@ export function ExpenseManager() {
                   <TableCell>{expense.paidBy}</TableCell>
                   <TableCell className="text-right font-mono">₹{expense.amount.toFixed(2)}</TableCell>
                   <TableCell>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id!)}>
+                      <Button variant="ghost" size="icon" onClick={() => deleteExpense(expense.id!)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                   </TableCell>
@@ -190,3 +178,5 @@ export function ExpenseManager() {
     </div>
   );
 }
+
+    

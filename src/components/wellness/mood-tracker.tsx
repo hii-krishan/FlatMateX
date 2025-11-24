@@ -1,31 +1,33 @@
+
 "use client";
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { RadioGroup } from "@/components/ui/radio-group";
 import { Slider } from "@/components/ui/slider";
 import { getSelfCareAdvice } from '@/ai/flows/mood-based-self-care-advice';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts";
-import { mockMoodData } from '@/lib/data';
 import type { MoodEntry } from '@/lib/types';
 import { HeartPulse, Loader2, Sparkles } from 'lucide-react';
+import { useData } from '@/context/data-context';
 
 const moodOptions: MoodEntry['mood'][] = ['Happy', 'Calm', 'Productive', 'Stressed', 'Sad'];
 const productivityOptions: MoodEntry['productivity'][] = ['High', 'Medium', 'Low'];
 
-const moodChartData = mockMoodData.map(d => ({
-    date: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' }),
-    sleep: d.sleepHours,
-}));
-
 export function MoodTracker() {
+  const { moodData } = useData();
   const [mood, setMood] = useState<MoodEntry['mood']>('Calm');
   const [sleepHours, setSleepHours] = useState(7);
   const [productivity, setProductivity] = useState<MoodEntry['productivity']>('Medium');
   const [advice, setAdvice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
+  const moodChartData = moodData.map(d => ({
+      date: new Date(d.date).toLocaleDateString('en-US', { weekday: 'short' }),
+      sleep: d.sleepHours,
+  }));
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -117,3 +119,5 @@ export function MoodTracker() {
     </div>
   );
 }
+
+    

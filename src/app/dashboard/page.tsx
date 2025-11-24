@@ -12,10 +12,11 @@ import { OverviewCard } from "@/components/dashboard/overview-cards";
 import { MoodChart } from "@/components/dashboard/mood-chart";
 import { AIAssistantPreview } from "@/components/dashboard/ai-assistant-preview";
 import { useEffect, useState } from "react";
-import { mockExpenses, mockEvents, mockGroceryList } from "@/lib/data";
+import { useData } from "@/context/data-context";
 
 
 export default function DashboardPage() {
+    const { expenses, events, groceries } = useData();
     
     const [totalExpense, setTotalExpense] = useState(0);
     const [upcomingEventsCount, setUpcomingEventsCount] = useState(0);
@@ -26,24 +27,24 @@ export default function DashboardPage() {
         setLoading(true);
 
         // Calculate total expenses
-        const total = mockExpenses.reduce((sum, doc) => sum + doc.amount, 0);
+        const total = expenses.reduce((sum, doc) => sum + doc.amount, 0);
         setTotalExpense(total);
 
         // Calculate upcoming events
         const thirtyDaysFromNow = new Date();
         thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-        const upcomingEvents = mockEvents.filter(event => {
+        const upcomingEvents = events.filter(event => {
             const eventDate = new Date(event.date);
             return eventDate >= new Date() && eventDate <= thirtyDaysFromNow;
         });
         setUpcomingEventsCount(upcomingEvents.length);
         
         // Calculate grocery items to buy
-        const itemsToBuy = mockGroceryList.filter(item => !item.purchased);
+        const itemsToBuy = groceries.filter(item => !item.purchased);
         setGroceryItemsCount(itemsToBuy.length);
 
         setLoading(false);
-    }, []);
+    }, [expenses, events, groceries]);
 
   return (
     <div className="space-y-6">
@@ -96,3 +97,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

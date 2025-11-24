@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -10,10 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote, Trash2, Pencil, X } from 'lucide-react';
-import { mockEvents, mockPolls } from '@/lib/data';
-import type { Event, Poll, PollOption } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
-
+import type { Event, Poll } from '@/lib/types';
+import { useData } from '@/context/data-context';
 
 const eventIcons = {
   'Movie Night': Film,
@@ -23,52 +21,29 @@ const eventIcons = {
 };
 
 export function EventPlanner() {
+  const { events, addEvent, deleteEvent, polls, updatePoll, voteOnPoll } = useData();
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isPollDialogOpen, setIsPollDialogOpen] = useState(false);
   const [editingPoll, setEditingPoll] = useState<Poll | null>(null);
-  const [events, setEvents] = useState<Event[]>(mockEvents);
-  const [polls, setPolls] = useState<Poll[]>(mockPolls);
-  const { toast } = useToast();
 
   const handleCreateEvent = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const newEvent: Event = {
-      id: `evt-${Date.now()}`,
+    const newEvent: Omit<Event, 'id' | 'flatmateId'> = {
       title: formData.get('title') as string,
       date: formData.get('date') as string,
       type: formData.get('type') as Event['type'],
-      flatmateId: 'user-1'
     };
-    setEvents(prev => [...prev, newEvent]);
+    addEvent(newEvent);
     setIsEventDialogOpen(false);
-    toast({title: 'Event Created!'})
   };
-
-  const handleDeleteEvent = (eventId: string) => {
-    setEvents(prev => prev.filter(e => e.id !== eventId));
-    toast({ title: "Event deleted." });
-  }
   
   const handleVote = (pollId: string, optionIndex: number) => {
-    setPolls(prevPolls => prevPolls.map(poll => {
-        if (poll.id === pollId) {
-            const newOptions = poll.options.map((option, idx) => {
-                if (idx === optionIndex) {
-                    // Simple vote increment for mock data
-                    return { ...option, votes: option.votes + 1 };
-                }
-                return option;
-            });
-            return { ...poll, options: newOptions };
-        }
-        return poll;
-    }));
-    toast({ title: "Vote counted!" });
+    voteOnPoll(pollId, optionIndex);
   }
 
   const handleEditPollClick = (poll: Poll) => {
-    setEditingPoll(poll);
+    setEditingPoll(JSON.parse(JSON.stringify(poll))); // Deep copy to avoid direct state mutation
     setIsPollDialogOpen(true);
   };
   
@@ -81,7 +56,7 @@ export function EventPlanner() {
       const updatedOptions = editingPoll.options.map((opt, index) => ({
         ...opt,
         text: formData.get(`pollOption-${index}`) as string,
-      })).filter(opt => opt.text.trim() !== '');
+      })).filter(opt => opt.text && opt.text.trim() !== '');
 
       const newOptionText = formData.get('newPollOption') as string;
       if (newOptionText && newOptionText.trim() !== '') {
@@ -94,10 +69,9 @@ export function EventPlanner() {
           options: updatedOptions
       };
       
-      setPolls(prev => prev.map(p => p.id === editingPoll.id ? updatedPoll : p));
+      updatePoll(updatedPoll);
       setEditingPoll(null);
       setIsPollDialogOpen(false);
-      toast({ title: 'Poll updated!' });
   };
 
   const handlePollOptionChange = (index: number, value: string) => {
@@ -176,7 +150,7 @@ export function EventPlanner() {
                             <p className="text-sm text-muted-foreground">{eventDate.toDateString()}</p>
                         </div>
                         
-                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={() => handleDeleteEvent(event.id!)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={() => deleteEvent(event.id!)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                          
@@ -263,7 +237,7 @@ export function EventPlanner() {
                 </div>
 
                 <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => setIsPollDialogOpen(false)}>Cancel</Button>
+                    <Button type="button" variant="ghost" onClick={() => { setIsPollDialogOpen(false); setEditingPoll(null); }}>Cancel</Button>
                     <Button type="submit">Save Changes</Button>
                 </DialogFooter>
             </form>
@@ -273,3 +247,5 @@ export function EventPlanner() {
     </>
   );
 }
+
+    
