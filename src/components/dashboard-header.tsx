@@ -92,51 +92,50 @@ export function DashboardHeader() {
 
       <div className="ml-auto flex items-center gap-4">
         <ThemeToggle />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="https://picsum.photos/seed/user-avatar/100" alt="User Avatar" />
-                <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel className="flex items-center gap-2">
-                {user.name}
-                <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsProfileDialogOpen(true)}>
-                      <Pencil className="h-4 w-4" />
-                  </Button>
-                </DialogTrigger>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                <Avatar className="h-9 w-9">
+                  <AvatarImage src="https://picsum.photos/seed/user-avatar/100" alt="User Avatar" />
+                  <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel className="flex items-center gap-2">
+                  {user.name}
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Edit Profile</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleProfileUpdate} className="space-y-4">
+                  <div className="space-y-2">
+                      <Label htmlFor="name">Your Name</Label>
+                      <Input id="name" name="name" defaultValue={user.name} required />
+                  </div>
+                  <DialogFooter>
+                      <Button type="button" variant="ghost" onClick={() => setIsProfileDialogOpen(false)}>Cancel</Button>
+                      <Button type="submit">Save Changes</Button>
+                  </DialogFooter>
+              </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </header>
-
-    <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Edit Profile</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleProfileUpdate} className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="name">Your Name</Label>
-                    <Input id="name" name="name" defaultValue={user.name} required />
-                </div>
-                <DialogFooter>
-                    <Button type="button" variant="ghost" onClick={() => setIsProfileDialogOpen(false)}>Cancel</Button>
-                    <Button type="submit">Save Changes</Button>
-                </DialogFooter>
-            </form>
-        </DialogContent>
-    </Dialog>
     </>
   );
 }
