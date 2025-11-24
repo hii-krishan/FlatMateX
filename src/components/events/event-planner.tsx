@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -10,12 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote, Trash2 } from 'lucide-react';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove, deleteDoc } from 'firebase/firestore';
-import type { Event, Poll } from '@/lib/types';
+import { mockEvents, mockPolls } from '@/lib/data';
+import type { Event, Poll, PollOption } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 
 const eventIcons = {
@@ -28,85 +25,45 @@ const eventIcons = {
 export function EventPlanner() {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isPollDialogOpen, setIsPollDialogOpen] = useState(false);
-  const firestore = useFirestore();
+  const [events, setEvents] = useState<Event[]>(mockEvents);
+  const [polls, setPolls] = useState<Poll[]>(mockPolls);
   const { toast } = useToast();
 
-  const eventsCollection = useMemo(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'events');
-  }, [firestore]);
-  const { data: events, loading: eventsLoading } = useCollection<Event>(eventsCollection, {
-    orderBy: 'date',
-    direction: 'asc'
-  });
-  
-  const pollsCollection = useMemo(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'polls');
-  }, [firestore]);
-  const { data: polls, loading: pollsLoading } = useCollection<Poll>(pollsCollection);
-
-  const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateEvent = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!firestore || !eventsCollection) return;
     const formData = new FormData(e.currentTarget);
-    const newEvent: Omit<Event, 'id'> = {
+    const newEvent: Event = {
+      id: `evt-${Date.now()}`,
       title: formData.get('title') as string,
       date: formData.get('date') as string,
       type: formData.get('type') as Event['type'],
+      flatmateId: 'user-1'
     };
-    addDoc(eventsCollection, newEvent)
-      .then(() => {
-        setIsEventDialogOpen(false);
-        toast({title: 'Event Created!'})
-      })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: eventsCollection.path,
-            operation: 'create',
-            requestResourceData: newEvent,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+    setEvents(prev => [...prev, newEvent]);
+    setIsEventDialogOpen(false);
+    toast({title: 'Event Created!'})
   };
 
-  const handleDeleteEvent = async (eventId: string) => {
-    if (!firestore) return;
-    const eventRef = doc(firestore, "events", eventId);
-    deleteDoc(eventRef)
-      .then(() => {
-        toast({ title: "Event deleted." });
-      })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: eventRef.path,
-            operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+  const handleDeleteEvent = (eventId: string) => {
+    setEvents(prev => prev.filter(e => e.id !== eventId));
+    toast({ title: "Event deleted." });
   }
   
-  const handleVote = async (pollId: string, optionIndex: number) => {
-    if (!firestore) return;
-    const pollDocRef = doc(firestore, "polls", pollId);
-    const poll = polls?.find(p => p.id === pollId);
-    if (!poll) return;
-    
-    const updates: { [key: string]: any } = {};
-    updates[`options.${optionIndex}.votes`] = poll.options[optionIndex].votes + 1;
-    
-    updateDoc(pollDocRef, updates)
-      .then(() => {
-        toast({ title: "Vote counted!" });
-      })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: pollDocRef.path,
-            operation: 'update',
-            requestResourceData: updates,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+  const handleVote = (pollId: string, optionIndex: number) => {
+    setPolls(prevPolls => prevPolls.map(poll => {
+        if (poll.id === pollId) {
+            const newOptions = poll.options.map((option, idx) => {
+                if (idx === optionIndex) {
+                    // Simple vote increment for mock data
+                    return { ...option, votes: option.votes + 1 };
+                }
+                return option;
+            });
+            return { ...poll, options: newOptions };
+        }
+        return poll;
+    }));
+    toast({ title: "Vote counted!" });
   }
 
   return (
@@ -155,26 +112,25 @@ export function EventPlanner() {
             </Dialog>
           </CardHeader>
           <CardContent className="space-y-4">
-            {eventsLoading && <p>Loading events...</p>}
-            {events?.map(event => {
+            {events.length === 0 && <p>No upcoming events.</p>}
+            {events.map(event => {
                 const Icon = eventIcons[event.type];
                 const eventDate = new Date(event.date);
                 const isPast = eventDate < new Date();
                 return (
                     <div key={event.id} className={`flex items-center space-x-4 rounded-lg border p-4 group ${isPast ? 'opacity-50' : ''}`}>
                         <div className="flex-shrink-0 bg-muted rounded-lg p-3">
-                           <Icon className="h-6 w-6 text-muted-foreground" />
+                           {Icon && <Icon className="h-6 w-6 text-muted-foreground" />}
                         </div>
                         <div className="flex-1">
                             <p className="font-semibold">{event.title}</p>
                             <p className="text-sm text-muted-foreground">{eventDate.toDateString()}</p>
                         </div>
-                        {isPast ? 
+                        
                           <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100" onClick={() => handleDeleteEvent(event.id!)}>
                             <Trash2 className="h-4 w-4" />
-                          </Button> :
-                          <div className="text-sm text-primary font-medium">Upcoming</div>
-                        }
+                          </Button>
+                         
                     </div>
                 );
             })}
@@ -189,8 +145,8 @@ export function EventPlanner() {
             <CardDescription>Decide on group activities together.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {pollsLoading && <p>Loading polls...</p>}
-            {polls?.map(poll => {
+            {polls.length === 0 && <p>No active polls.</p>}
+            {polls.map(poll => {
                 const totalVotes = poll.options.reduce((sum, opt) => sum + opt.votes, 0);
                 return (
                     <div key={poll.id} className="space-y-3">
@@ -198,11 +154,12 @@ export function EventPlanner() {
                         <div className="space-y-3">
                             {poll.options.map((option, index) => {
                                 const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
+                                
                                 return (
                                     <div key={index} className="space-y-1">
                                         <div className="flex justify-between items-center text-sm">
                                             <span>{option.text}</span>
-                                            <Button size="sm" variant='outline' onClick={() => handleVote(poll.id!, index)}>
+                                            <Button size="sm" variant={'outline'} onClick={() => handleVote(poll.id!, index)}>
                                               Vote
                                             </Button>
                                         </div>

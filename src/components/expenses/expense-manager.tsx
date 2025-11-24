@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,30 +12,19 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Lightbulb, Trash2 } from 'lucide-react';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { mockExpenses } from '@/lib/data';
 import type { Expense } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-
 
 const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
 
 export function ExpenseManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const firestore = useFirestore();
+  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
   const { toast } = useToast();
 
-  const expensesCollection = useMemo(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'expenses');
-  }, [firestore]);
-
-  const { data: expenses, loading } = useCollection<Expense>(expensesCollection);
 
   const dataByCategory = useMemo(() => {
-    if (!expenses) return [];
     return expenses.reduce((acc, expense) => {
       const existing = acc.find(item => item.name === expense.category);
       if (existing) {
@@ -47,48 +36,29 @@ export function ExpenseManager() {
     }, [] as { name: string, value: number }[]);
   }, [expenses]);
 
-  const handleAddExpense = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAddExpense = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!firestore || !expensesCollection) return;
 
     const formData = new FormData(e.currentTarget);
-    const newExpense: Omit<Expense, 'id'> = {
+    const newExpense: Expense = {
+      id: `exp-${Date.now()}`,
       name: formData.get('name') as string,
       amount: parseFloat(formData.get('amount') as string),
       category: formData.get('category') as Expense['category'],
       date: new Date().toISOString().split('T')[0],
       paidBy: 'Me',
+      flatmateId: 'user-1',
     };
 
-    addDoc(expensesCollection, newExpense)
-      .then(() => {
-        toast({ title: 'Expense Added!' });
-        setIsDialogOpen(false);
-      })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: expensesCollection.path,
-          operation: 'create',
-          requestResourceData: newExpense,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+    setExpenses(prev => [...prev, newExpense]);
+    toast({ title: 'Expense Added!' });
+    setIsDialogOpen(false);
+    e.currentTarget.reset();
   };
 
-  const handleDeleteExpense = async (expenseId: string) => {
-    if (!firestore) return;
-    const expenseRef = doc(firestore, 'expenses', expenseId);
-    deleteDoc(expenseRef)
-      .then(() => {
-        toast({ title: 'Expense Deleted' });
-      })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: expenseRef.path,
-          operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+  const handleDeleteExpense = (expenseId: string) => {
+    setExpenses(prev => prev.filter(exp => exp.id !== expenseId));
+    toast({ title: 'Expense Deleted' });
   }
 
   return (
@@ -101,7 +71,7 @@ export function ExpenseManager() {
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
-              {loading ? <div className="h-full w-full flex items-center justify-center">Loading chart...</div> :
+              {expenses.length === 0 ? <div className="h-full w-full flex items-center justify-center">No expenses yet.</div> :
               <PieChart>
                 <Pie
                   data={dataByCategory}
@@ -198,8 +168,8 @@ export function ExpenseManager() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading && <TableRow><TableCell colSpan={6} className="text-center">Loading expenses...</TableCell></TableRow>}
-              {expenses?.map((expense) => (
+              {expenses.length === 0 && <TableRow><TableCell colSpan={6} className="text-center">No expenses recorded yet.</TableCell></TableRow>}
+              {expenses.map((expense) => (
                 <TableRow key={expense.id}>
                   <TableCell className="font-medium">{expense.name}</TableCell>
                   <TableCell><Badge variant="secondary">{expense.category}</Badge></TableCell>
@@ -207,9 +177,9 @@ export function ExpenseManager() {
                   <TableCell>{expense.paidBy}</TableCell>
                   <TableCell className="text-right font-mono">₹{expense.amount.toFixed(2)}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id!)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id!)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                   </TableCell>
                 </TableRow>
               ))}

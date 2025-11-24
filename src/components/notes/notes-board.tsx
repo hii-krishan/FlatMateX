@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,12 +15,8 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
+import { mockNotes } from '@/lib/data';
 import type { Note } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
-
 
 const noteColors = [
   'bg-yellow-200',
@@ -33,50 +29,27 @@ const noteColors = [
 export function NotesBoard() {
   const [newNoteContent, setNewNoteContent] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const firestore = useFirestore();
+  const [notes, setNotes] = useState<Note[]>(mockNotes);
 
-  const notesCollection = useMemo(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'notes');
-  }, [firestore]);
+  const handleAddNote = () => {
+    if (newNoteContent.trim() === '') return;
 
-  const { data: notes, loading } = useCollection<Note>(notesCollection);
-
-  const handleAddNote = async () => {
-    if (newNoteContent.trim() === '' || !firestore) return;
-
-    const newNote = {
+    const newNote: Note = {
+      id: `note-${Date.now()}`,
       content: newNoteContent,
-      color: noteColors[Math.floor(Math.random() * noteColors.length)],
-      createdAt: serverTimestamp(),
       author: 'Anonymous',
+      authorId: 'user-1',
+      color: noteColors[Math.floor(Math.random() * noteColors.length)],
+      createdAt: new Date(),
     };
-    
-    if (!notesCollection) return;
 
-    addDoc(notesCollection, newNote).catch(async (serverError) => {
-      const permissionError = new FirestorePermissionError({
-          path: notesCollection.path,
-          operation: 'create',
-          requestResourceData: newNote,
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    });
-
+    setNotes(prev => [...prev, newNote]);
     setNewNoteContent('');
     setIsDialogOpen(false);
   };
   
-  const handleDeleteNote = async (noteId: string) => {
-    if (!firestore) return;
-    const noteRef = doc(firestore, 'notes', noteId);
-    deleteDoc(noteRef).catch(async (serverError) => {
-      const permissionError = new FirestorePermissionError({
-          path: noteRef.path,
-          operation: 'delete',
-      });
-      errorEmitter.emit('permission-error', permissionError);
-    });
+  const handleDeleteNote = (noteId: string) => {
+    setNotes(prev => prev.filter(note => note.id !== noteId));
   }
 
   return (
@@ -114,10 +87,10 @@ export function NotesBoard() {
         </Dialog>
       </div>
 
-      {loading && <p>Loading notes...</p>}
+      {notes.length === 0 && <p>No notes yet. Add one!</p>}
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {notes?.map((note) => (
+        {notes.map((note) => (
           <Card key={note.id} className={`${note.color} relative group`}>
             <CardContent className="p-4">
               <p className="text-black whitespace-pre-wrap">{note.content}</p>

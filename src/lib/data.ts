@@ -1,9 +1,10 @@
 import type { Expense, Task, Class, GroceryItem, Chore, MoodEntry, Event, Poll, Service, Note } from './types';
+import { serverTimestamp } from 'firebase/firestore';
 
 export const mockNotes: Note[] = [
-  { id: 'n1', content: 'Pay electricity bill by Friday!', color: 'bg-yellow-200' },
-  { id: 'n2', content: 'Weekend movie plan: Anyone up for a horror movie?', color: 'bg-green-200' },
-  { id: 'n3', content: 'Remember to buy groceries for the party.', color: 'bg-blue-200' },
+  { id: 'n1', content: 'Pay electricity bill by Friday!', color: 'bg-yellow-200', author: 'Alex', createdAt: serverTimestamp() },
+  { id: 'n2', content: 'Weekend movie plan: Anyone up for a horror movie?', color: 'bg-green-200', author: 'Ben', createdAt: serverTimestamp() },
+  { id: 'n3', content: 'Remember to buy groceries for the party.', color: 'bg-blue-200', author: 'Chloe', createdAt: serverTimestamp() },
 ];
 
 export const mockExpenses: Expense[] = [
@@ -65,8 +66,8 @@ export const mockPolls: Poll[] = [
         id: 'p1',
         question: 'Pizza night or game night?',
         options: [
-            { text: 'Pizza Night 🍕', votes: 8 },
-            { text: 'Game Night 🎮', votes: 5 },
+            { text: 'Pizza Night 🍕', votes: 8, voters: [] },
+            { text: 'Game Night 🎮', votes: 5, voters: [] },
         ]
     }
 ];

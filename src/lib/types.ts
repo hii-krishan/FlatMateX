@@ -1,13 +1,10 @@
-import { FieldValue } from "firebase/firestore";
-
-export type FirestoreDocument<T> = T & { id: string };
 
 export type Expense = {
   id?: string;
   name: string;
   amount: number;
   category: 'Rent' | 'Bills' | 'Groceries' | 'Food' | 'Other';
-  date: string | FieldValue;
+  date: string;
   paidBy: string;
   flatmateId?: string;
 };
@@ -83,10 +80,10 @@ export type Service = {
 };
 
 export type Note = {
-  id: string;
+  id?: string;
   content: string;
   color: string;
-  createdAt: FieldValue;
+  createdAt: any; // Allow Date or serverTimestamp
   author: string;
   authorId?: string;
 };

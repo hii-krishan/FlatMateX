@@ -11,12 +11,9 @@ import { Plus, Sparkles, Trash2, Loader2, Pencil } from 'lucide-react';
 import { getSmartGrocerySuggestions } from '@/ai/flows/smart-grocery-suggestions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Label } from "@/components/ui/label";
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { mockGroceryList, mockChoreList } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import type { GroceryItem, Chore } from '@/lib/types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 
 export function GroceryTracker() {
@@ -27,21 +24,10 @@ export function GroceryTracker() {
   const [isChoreDialogOpen, setIsChoreDialogOpen] = useState(false);
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
 
-  const firestore = useFirestore();
+  const [groceries, setGroceries] = useState<GroceryItem[]>(mockGroceryList);
+  const [chores, setChores] = useState<Chore[]>(mockChoreList);
+
   const { toast } = useToast();
-
-  const groceriesCollection = useMemo(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'groceries');
-  }, [firestore]);
-  const { data: groceries, loading: groceriesLoading } = useCollection<GroceryItem>(groceriesCollection);
-  
-  const choresCollection = useMemo(() => {
-    if (!firestore) return null;
-    return collection(firestore, 'chores');
-  }, [firestore]);
-  const { data: chores, loading: choresLoading } = useCollection<Chore>(choresCollection);
-
 
   const fetchSuggestions = async () => {
     if (!groceries) return;
@@ -63,79 +49,36 @@ export function GroceryTracker() {
   };
 
   useEffect(() => {
-    if (groceries) {
-      fetchSuggestions();
-    }
+    fetchSuggestions();
   }, [groceries]);
 
   const addGrocery = async () => {
-    if (newGrocery.trim() && firestore && groceriesCollection) {
-      const item: Omit<GroceryItem, 'id'> = { 
+    if (newGrocery.trim()) {
+      const item: GroceryItem = { 
+        id: `groc-${Date.now()}`,
         name: newGrocery.trim(), 
         quantity: newGroceryQty, 
         purchased: false,
+        flatmateId: 'user-1',
       };
-      addDoc(groceriesCollection, item)
-        .then(() => {
-          setNewGrocery('');
-          setNewGroceryQty(1);
-          toast({ title: 'Grocery item added!' });
-        })
-        .catch(async (serverError) => {
-          const permissionError = new FirestorePermissionError({
-            path: groceriesCollection.path,
-            operation: 'create',
-            requestResourceData: item,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        });
+      setGroceries(prev => [...prev, item]);
+      setNewGrocery('');
+      setNewGroceryQty(1);
+      toast({ title: 'Grocery item added!' });
     }
   };
 
   const toggleGrocery = async (id: string, currentStatus: boolean) => {
-    if (!firestore) return;
-    const itemDoc = doc(firestore, 'groceries', id);
-    const update = { purchased: !currentStatus };
-    updateDoc(itemDoc, update)
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: itemDoc.path,
-          operation: 'update',
-          requestResourceData: update,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+    setGroceries(prev => prev.map(g => g.id === id ? { ...g, purchased: !currentStatus } : g));
   };
 
   const deleteGrocery = async (id: string) => {
-    if (!firestore) return;
-    const itemDoc = doc(firestore, 'groceries', id);
-    deleteDoc(itemDoc)
-      .then(() => {
-        toast({ title: 'Grocery item deleted.' });
-      })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: itemDoc.path,
-          operation: 'delete',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+    setGroceries(prev => prev.filter(g => g.id !== id));
+    toast({ title: 'Grocery item deleted.' });
   }
   
   const toggleChore = async (id: string, currentStatus: boolean) => {
-    if (!firestore) return;
-    const choreDoc = doc(firestore, 'chores', id);
-    const update = { completed: !currentStatus };
-    updateDoc(choreDoc, update)
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: choreDoc.path,
-          operation: 'update',
-          requestResourceData: update,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+    setChores(prev => prev.map(c => c.id === id ? { ...c, completed: !currentStatus } : c));
   };
 
   const handleEditChoreClick = (chore: Chore) => {
@@ -145,29 +88,21 @@ export function GroceryTracker() {
 
   const handleSaveChore = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!editingChore || !firestore) return;
+    if (!editingChore) return;
 
     const formData = new FormData(e.currentTarget);
-    const updatedChore = {
+    const updatedChore: Chore = {
+        id: editingChore.id,
         name: formData.get('choreName') as string,
         assignedTo: formData.get('assignedTo') as string,
+        completed: editingChore.completed,
+        flatmateId: 'user-1',
     };
     
-    const choreDoc = doc(firestore, 'chores', editingChore.id!);
-    updateDoc(choreDoc, updatedChore)
-      .then(() => {
-        setEditingChore(null);
-        setIsChoreDialogOpen(false);
-        toast({ title: 'Chore updated!' });
-      })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: choreDoc.path,
-          operation: 'update',
-          requestResourceData: updatedChore,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
+    setChores(prev => prev.map(c => c.id === editingChore.id ? updatedChore : c));
+    setEditingChore(null);
+    setIsChoreDialogOpen(false);
+    toast({ title: 'Chore updated!' });
   };
 
   return (
@@ -185,8 +120,8 @@ export function GroceryTracker() {
             <Button onClick={addGrocery}><Plus className="mr-2 h-4 w-4" /> Add</Button>
           </div>
           <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
-            {groceriesLoading && <p>Loading groceries...</p>}
-            {groceries?.map(item => (
+            {groceries.length === 0 && <p>No groceries in the list.</p>}
+            {groceries.map(item => (
               <div key={item.id} className="flex items-center space-x-3 rounded-md border p-3 group">
                 <Checkbox id={`g-${item.id}`} checked={item.purchased} onCheckedChange={() => toggleGrocery(item.id!, item.purchased)} />
                 <label htmlFor={`g-${item.id}`} className={`flex-1 text-sm ${item.purchased ? 'line-through text-muted-foreground' : ''}`}>
@@ -235,8 +170,8 @@ export function GroceryTracker() {
             <CardDescription>Assign and track cleaning duties.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            {choresLoading && <p>Loading chores...</p>}
-            {chores?.map(chore => (
+            {chores.length === 0 && <p>No chores assigned.</p>}
+            {chores.map(chore => (
               <div key={chore.id} className="flex items-center space-x-3 rounded-md border p-3">
                 <Checkbox id={`c-${chore.id}`} checked={chore.completed} onCheckedChange={() => toggleChore( chore.id!, chore.completed)} />
                 <label htmlFor={`c-${chore.id}`} className={`flex-1 text-sm ${chore.completed ? 'line-through text-muted-foreground' : ''}`}>{chore.name}</label>
