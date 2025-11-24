@@ -11,7 +11,7 @@ import {
 import { OverviewCard } from "@/components/dashboard/overview-cards";
 import { MoodChart } from "@/components/dashboard/mood-chart";
 import { AIAssistantPreview } from "@/components/dashboard/ai-assistant-preview";
-import { useCollection, useFirestore, useUser } from "@/firebase";
+import { useCollection, useFirestore } from "@/firebase";
 import { collection, query, where, getDocs, sum, getCountFromServer } from "firebase/firestore";
 import { useEffect, useMemo, useState } from "react";
 import type { Expense, Event, GroceryItem, FirestoreDocument } from "@/lib/types";
@@ -19,7 +19,6 @@ import type { Expense, Event, GroceryItem, FirestoreDocument } from "@/lib/types
 
 export default function DashboardPage() {
     const firestore = useFirestore();
-    const { user } = useUser();
     
     const [totalExpense, setTotalExpense] = useState(0);
     const [upcomingEventsCount, setUpcomingEventsCount] = useState(0);
@@ -27,23 +26,23 @@ export default function DashboardPage() {
     const [loading, setLoading] = useState(true);
 
     const expensesCollection = useMemo(() => {
-        if (!firestore || !user) return null;
+        if (!firestore) return null;
         return collection(firestore, 'expenses');
-    }, [firestore, user]);
+    }, [firestore]);
 
     const eventsCollection = useMemo(() => {
-        if (!firestore || !user) return null;
+        if (!firestore) return null;
         return collection(firestore, 'events');
-    }, [firestore, user]);
+    }, [firestore]);
 
     const groceriesCollection = useMemo(() => {
-        if (!firestore || !user) return null;
+        if (!firestore) return null;
         return collection(firestore, 'groceries');
-    }, [firestore, user]);
+    }, [firestore]);
 
     useEffect(() => {
         const fetchData = async () => {
-            if (!firestore || !user) return;
+            if (!firestore) return;
             setLoading(true);
 
             // Fetch expenses
@@ -67,7 +66,7 @@ export default function DashboardPage() {
             setLoading(false);
         }
         fetchData();
-    }, [firestore, user, expensesCollection, eventsCollection, groceriesCollection]);
+    }, [firestore, expensesCollection, eventsCollection, groceriesCollection]);
 
   return (
     <div className="space-y-6">
@@ -98,7 +97,7 @@ export default function DashboardPage() {
             value="1" // This will be dynamic later
             icon={Users}
             description="active in the flat"
-            loading={loading}
+            loading={false}
         />
       </div>
 
@@ -120,4 +119,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

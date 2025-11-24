@@ -26,8 +26,6 @@ import {
   SidebarMenuButton,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import { useAuth } from '@/firebase';
-import { signOut } from 'firebase/auth';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
@@ -43,12 +41,9 @@ const navItems = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const auth = useAuth();
 
   const handleLogout = async () => {
-    if (auth) {
-      await signOut(auth);
-    }
+    // No logout without auth
   };
 
   return (
@@ -94,8 +89,8 @@ export function DashboardSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} asChild tooltip={{ children: 'Logout' }}>
-              <Link href="/login">
+            <SidebarMenuButton onClick={handleLogout} asChild tooltip={{ children: 'Logout' }} disabled>
+              <Link href="#">
                 <LogOut />
                 <span>Logout</span>
               </Link>

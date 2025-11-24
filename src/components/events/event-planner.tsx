@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote, Trash2 } from 'lucide-react';
-import { useFirestore, useUser, useCollection } from '@/firebase';
+import { useFirestore, useCollection } from '@/firebase';
 import { collection, addDoc, updateDoc, doc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import type { Event, Poll } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +26,6 @@ export function EventPlanner() {
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false);
   const [isPollDialogOpen, setIsPollDialogOpen] = useState(false);
   const firestore = useFirestore();
-  const { user } = useUser();
   const { toast } = useToast();
 
   const eventsCollection = useMemo(() => {
@@ -46,13 +45,12 @@ export function EventPlanner() {
 
   const handleCreateEvent = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!firestore || !user) return;
+    if (!firestore) return;
     const formData = new FormData(e.currentTarget);
     const newEvent: Omit<Event, 'id'> = {
       title: formData.get('title') as string,
       date: formData.get('date') as string,
       type: formData.get('type') as Event['type'],
-      flatmateId: user.uid
     };
     await addDoc(collection(firestore, 'events'), newEvent);
     setIsEventDialogOpen(false);
@@ -60,7 +58,7 @@ export function EventPlanner() {
   };
   
   const handleVote = async (pollId: string, optionIndex: number) => {
-    if (!firestore || !user) return;
+    if (!firestore) return;
     const pollDocRef = doc(firestore, "polls", pollId);
     
     // This is a bit complex, but it ensures a user can't vote multiple times on the same option
@@ -69,8 +67,11 @@ export function EventPlanner() {
     const poll = polls?.find(p => p.id === pollId);
     if (!poll) return;
 
+    // A user ID is required to track votes, but we have no users. For now, we use a random string.
+    const mockUserId = Math.random().toString(36).substring(7);
+
     // Check if user has already voted for this option
-    if (poll.options[optionIndex].voters.includes(user.uid)) {
+    if (poll.options[optionIndex].voters.includes(mockUserId)) {
       toast({ description: "You've already voted for this option." });
       return;
     }
@@ -78,15 +79,15 @@ export function EventPlanner() {
     // Remove user's previous vote if any
     const updates: { [key: string]: any } = {};
     poll.options.forEach((opt, idx) => {
-      if (opt.voters.includes(user.uid)) {
+      if (opt.voters.includes(mockUserId)) {
         updates[`options.${idx}.votes`] = opt.votes - 1;
-        updates[`options.${idx}.voters`] = arrayRemove(user.uid);
+        updates[`options.${idx}.voters`] = arrayRemove(mockUserId);
       }
     });
 
     // Add new vote
     updates[`options.${optionIndex}.votes`] = poll.options[optionIndex].votes + 1;
-    updates[`options.${optionIndex}.voters`] = arrayUnion(user.uid);
+    updates[`options.${optionIndex}.voters`] = arrayUnion(mockUserId);
 
     await updateDoc(pollDocRef, updates);
     toast({ title: "Vote counted!" });
@@ -176,7 +177,7 @@ export function EventPlanner() {
                         <div className="space-y-3">
                             {poll.options.map((option, index) => {
                                 const percentage = totalVotes > 0 ? (option.votes / totalVotes) * 100 : 0;
-                                const userVotedForThis = user && option.voters.includes(user.uid);
+                                const userVotedForThis = false; // Cannot determine without user
                                 return (
                                     <div key={index} className="space-y-1">
                                         <div className="flex justify-between items-center text-sm">

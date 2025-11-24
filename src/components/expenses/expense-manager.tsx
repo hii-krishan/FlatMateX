@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Lightbulb, Trash2 } from 'lucide-react';
-import { useFirestore, useUser, useCollection } from '@/firebase';
+import { useFirestore, useCollection } from '@/firebase';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import type { Expense } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -21,13 +21,12 @@ const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3
 export function ExpenseManager() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const firestore = useFirestore();
-  const { user } = useUser();
   const { toast } = useToast();
 
   const expensesCollection = useMemo(() => {
-    if (!firestore || !user) return null;
+    if (!firestore) return null;
     return collection(firestore, 'expenses');
-  }, [firestore, user]);
+  }, [firestore]);
 
   const { data: expenses, loading } = useCollection<Expense>(expensesCollection);
 
@@ -46,7 +45,7 @@ export function ExpenseManager() {
 
   const handleAddExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!firestore || !user) return;
+    if (!firestore) return;
 
     const formData = new FormData(e.currentTarget);
     const newExpense: Omit<Expense, 'id'> = {
@@ -54,8 +53,7 @@ export function ExpenseManager() {
       amount: parseFloat(formData.get('amount') as string),
       category: formData.get('category') as Expense['category'],
       date: new Date().toISOString().split('T')[0],
-      paidBy: user.displayName || 'Me',
-      flatmateId: user.uid,
+      paidBy: 'Me',
     };
 
     try {
@@ -193,11 +191,11 @@ export function ExpenseManager() {
                   <TableCell>{expense.paidBy}</TableCell>
                   <TableCell className="text-right font-mono">₹{expense.amount.toFixed(2)}</TableCell>
                   <TableCell>
-                    {user?.uid === expense.flatmateId && (
+                    
                       <Button variant="ghost" size="icon" onClick={() => handleDeleteExpense(expense.id!)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    )}
+                    
                   </TableCell>
                 </TableRow>
               ))}

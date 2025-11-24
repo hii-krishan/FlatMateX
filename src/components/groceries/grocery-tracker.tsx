@@ -9,8 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Sparkles, Trash2, Loader2, Pencil } from 'lucide-react';
 import { getSmartGrocerySuggestions } from '@/ai/flows/smart-grocery-suggestions';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { useFirestore, useUser, useCollection } from '@/firebase';
+import { Label } from "@/components/ui/label";
+import { useFirestore, useCollection } from '@/firebase';
 import { collection, addDoc, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import type { GroceryItem, Chore } from '@/lib/types';
@@ -25,7 +25,6 @@ export function GroceryTracker() {
   const [editingChore, setEditingChore] = useState<Chore | null>(null);
 
   const firestore = useFirestore();
-  const { user } = useUser();
   const { toast } = useToast();
 
   const groceriesCollection = useMemo(() => {
@@ -67,12 +66,11 @@ export function GroceryTracker() {
   }, [groceries]);
 
   const addGrocery = async () => {
-    if (newGrocery.trim() && firestore && user) {
+    if (newGrocery.trim() && firestore) {
       const item: Omit<GroceryItem, 'id'> = { 
         name: newGrocery.trim(), 
         quantity: newGroceryQty, 
         purchased: false,
-        flatmateId: user.uid,
       };
       await addDoc(collection(firestore, 'groceries'), item);
       setNewGrocery('');
@@ -145,11 +143,11 @@ export function GroceryTracker() {
                   {item.name}
                 </label>
                 <Badge variant="outline">{item.quantity} pc(s)</Badge>
-                {user?.uid === item.flatmateId && (
+                
                   <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => deleteGrocery(item.id!)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
-                )}
+                
               </div>
             ))}
           </div>
@@ -192,14 +190,13 @@ export function GroceryTracker() {
             {choresLoading && <p>Loading chores...</p>}
             {chores?.map(chore => (
               <div key={chore.id} className="flex items-center space-x-3 rounded-md border p-3">
-                <Checkbox id={`c-${chore.id}`} checked={chore.completed} onCheckedChange={() => toggleChore(chore.id!, chore.completed)} />
+                <Checkbox id={`c-${chore.id}`} checked={chore.completed} onCheckedChange={() => toggleChore( chore.id!, chore.completed)} />
                 <label htmlFor={`c-${chore.id}`} className={`flex-1 text-sm ${chore.completed ? 'line-through text-muted-foreground' : ''}`}>{chore.name}</label>
                 <Badge variant={chore.assignedTo === 'Unassigned' ? 'destructive' : 'default'}>{chore.assignedTo}</Badge>
-                {user?.uid === chore.flatmateId && (
+                
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditChoreClick(chore)}>
                       <Pencil className="h-4 w-4" />
                   </Button>
-                )}
               </div>
             ))}
           </CardContent>

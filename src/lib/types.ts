@@ -9,7 +9,7 @@ export type Expense = {
   category: 'Rent' | 'Bills' | 'Groceries' | 'Food' | 'Other';
   date: string | FieldValue;
   paidBy: string;
-  flatmateId: string;
+  flatmateId?: string;
 };
 
 export type Task = {
@@ -17,7 +17,7 @@ export type Task = {
   title: string;
   completed: boolean;
   dueDate?: string;
-  flatmateId: string;
+  flatmateId?: string;
 };
 
 export type Class = {
@@ -25,7 +25,7 @@ export type Class = {
     name: string;
     time: string;
     day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday' | 'Saturday' | 'Sunday';
-    flatmateId: string;
+    flatmateId?: string;
 };
 
 export type GroceryItem = {
@@ -33,7 +33,7 @@ export type GroceryItem = {
   name: string;
   quantity: number;
   purchased: boolean;
-  flatmateId: string;
+  flatmateId?: string;
 };
 
 export type Chore = {
@@ -41,7 +41,7 @@ export type Chore = {
     name: string;
     assignedTo: string;
     completed: boolean;
-    flatmateId: string;
+    flatmateId?: string;
 };
 
 export type MoodEntry = {
@@ -50,7 +50,7 @@ export type MoodEntry = {
   mood: 'Happy' | 'Stressed' | 'Sad' | 'Calm' | 'Productive';
   sleepHours: number;
   productivity: 'High' | 'Medium' | 'Low';
-  flatmateId: string;
+  flatmateId?: string;
 };
 
 export type Event = {
@@ -58,7 +58,7 @@ export type Event = {
   title: string;
   date: string;
   type: 'Movie Night' | 'Birthday' | 'College Fest' | 'Outing';
-  flatmateId: string;
+  flatmateId?: string;
 };
 
 export type PollOption = { 
@@ -71,7 +71,7 @@ export type Poll = {
   id?: string;
   question: string;
   options: PollOption[];
-  flatmateId: string;
+  flatmateId?: string;
 };
 
 export type Service = {
@@ -88,5 +88,5 @@ export type Note = {
   color: string;
   createdAt: FieldValue;
   author: string;
-  authorId: string;
+  authorId?: string;
 };

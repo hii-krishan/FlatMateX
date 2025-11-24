@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { useFirestore, useCollection, useUser } from '@/firebase';
+import { useFirestore, useCollection } from '@/firebase';
 import { collection, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import type { Note } from '@/lib/types';
 import { useMemo } from 'react';
@@ -31,7 +31,6 @@ export function NotesBoard() {
   const [newNoteContent, setNewNoteContent] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const firestore = useFirestore();
-  const { user } = useUser();
 
   const notesCollection = useMemo(() => {
     if (!firestore) return null;
@@ -41,14 +40,13 @@ export function NotesBoard() {
   const { data: notes, loading } = useCollection<Note>(notesCollection);
 
   const handleAddNote = async () => {
-    if (newNoteContent.trim() === '' || !firestore || !user) return;
+    if (newNoteContent.trim() === '' || !firestore) return;
 
     const newNote = {
       content: newNoteContent,
       color: noteColors[Math.floor(Math.random() * noteColors.length)],
       createdAt: serverTimestamp(),
-      author: user.displayName || 'Anonymous',
-      authorId: user.uid,
+      author: 'Anonymous',
     };
 
     await addDoc(collection(firestore, 'notes'), newNote);
@@ -105,7 +103,7 @@ export function NotesBoard() {
               <p className="text-black whitespace-pre-wrap">{note.content}</p>
               <p className="text-xs text-black/60 mt-2">By {note.author}</p>
             </CardContent>
-            {user && user.uid === note.authorId && (
+            
               <Button
                 variant="ghost"
                 size="icon"
@@ -114,7 +112,6 @@ export function NotesBoard() {
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
-            )}
           </Card>
         ))}
       </div>

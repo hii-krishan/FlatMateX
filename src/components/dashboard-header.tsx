@@ -26,8 +26,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSidebar } from '@/components/ui/sidebar';
-import { useAuth, useUser } from '@/firebase';
-import { getAuth, signOut } from 'firebase/auth';
 
 const pageTitles: { [key: string]: { title: string, icon: React.ElementType } } = {
   '/dashboard': { title: 'Overview', icon: LayoutDashboard },
@@ -44,15 +42,11 @@ const pageTitles: { [key: string]: { title: string, icon: React.ElementType } } 
 export function DashboardHeader() {
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
-  const { user } = useUser();
-  const auth = useAuth();
   
   const { title, icon: Icon } = pageTitles[pathname] || { title: 'Dashboard', icon: LayoutDashboard };
 
   const handleLogout = async () => {
-    if (auth) {
-      await signOut(auth);
-    }
+    // Logout logic is removed as there is no login
   };
 
   return (
@@ -78,18 +72,18 @@ export function DashboardHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-9 w-9 rounded-full">
               <Avatar className="h-9 w-9">
-                <AvatarImage src={user?.photoURL ?? undefined} alt="User Avatar" />
-                <AvatarFallback>{user?.displayName?.charAt(0) || 'U'}</AvatarFallback>
+                <AvatarImage src={undefined} alt="User Avatar" />
+                <AvatarFallback>{'U'}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{user?.displayName || 'My Account'}</DropdownMenuLabel>
+            <DropdownMenuLabel>{'My Account'}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem disabled>Settings</DropdownMenuItem>
             <DropdownMenuItem disabled>Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} disabled>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
