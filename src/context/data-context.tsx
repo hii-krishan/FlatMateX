@@ -2,8 +2,8 @@
 "use client";
 
 import React, { createContext, useContext, useState } from 'react';
-import { mockExpenses, mockGroceryList, mockChores, mockEvents, mockPolls, mockNotes, mockTasks, mockTimetable, mockMoodData, mockUser } from '@/lib/data';
-import type { Expense, GroceryItem, Chore, Event, Poll, Note, Task, Class, MoodEntry, UserProfile } from '@/lib/types';
+import { mockExpenses, mockGroceryList, mockChores, mockEvents, mockPolls, mockNotes, mockTasks, mockTimetable, mockMoodData, mockUser, mockServicesData } from '@/lib/data';
+import type { Expense, GroceryItem, Chore, Event, Poll, Note, Task, Class, MoodEntry, UserProfile, Service } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface DataContextType {
@@ -44,6 +44,11 @@ interface DataContextType {
 
   moodData: MoodEntry[];
   updateMoodEntry: (id: string, data: Partial<MoodEntry>) => void;
+
+  services: Service[];
+  addService: (service: Omit<Service, 'id'>) => void;
+  updateService: (service: Service) => void;
+  deleteService: (id: string) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -68,6 +73,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [timetable, setTimetable] = useState<Class[]>(mockTimetable);
   const [moodData, setMoodData] = useState<MoodEntry[]>(mockMoodData);
+  const [services, setServices] = useState<Service[]>(mockServicesData);
 
   const { toast } = useToast();
 
@@ -196,7 +202,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const updateMoodEntry = (id: string, data: Partial<MoodEntry>) => {
     setMoodData(prev => prev.map(entry => entry.id === id ? { ...entry, ...data } : entry));
     toast({ title: "Sleep data updated!" });
-  }
+  };
+
+  const addService = (service: Omit<Service, 'id'>) => {
+    const newService: Service = {
+      id: `service-${Date.now()}`,
+      ...service
+    };
+    setServices(prev => [newService, ...prev]);
+    toast({ title: 'Service Added!' });
+  };
+
+  const updateService = (service: Service) => {
+    setServices(prev => prev.map(s => s.id === service.id ? service : s));
+    toast({ title: 'Service Updated!' });
+  };
+
+  const deleteService = (id: string) => {
+    setServices(prev => prev.filter(s => s.id !== id));
+    toast({ title: 'Service Deleted' });
+  };
 
   return (
     <DataContext.Provider value={{
@@ -209,7 +234,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       notes, addNote, deleteNote,
       tasks, addTask, toggleTask,
       timetable, updateTimetable,
-      moodData, updateMoodEntry
+      moodData, updateMoodEntry,
+      services, addService, updateService, deleteService
     }}>
       {children}
     </DataContext.Provider>

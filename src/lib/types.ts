@@ -78,7 +78,7 @@ export type Poll = {
 };
 
 export type Service = {
-  id: string;
+  id?: string;
   name: string;
   type: 'Tiffin' | 'Laundry' | 'Grocery Store' | 'Restaurant' | 'Electronics' | 'Furniture';
   rating: number;

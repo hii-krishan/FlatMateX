@@ -79,7 +79,7 @@ export const mockPolls: Poll[] = [
     }
 ];
 
-export const mockServices: Service[] = [
+export const mockServicesData: Service[] = [
     { id: 's1', name: 'Tasty Meals Tiffin', type: 'Tiffin', rating: 4.5, distance: '500m' },
     { id: 's2', name: 'QuickWash Laundry', type: 'Laundry', rating: 4.2, distance: '1.2km' },
     { id: 's3', name: 'Daily Needs Grocery', type: 'Grocery Store', rating: 4.8, distance: '800m' },
