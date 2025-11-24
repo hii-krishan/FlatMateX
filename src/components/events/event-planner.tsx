@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote, Trash2, Pencil } from 'lucide-react';
+import { PlusCircle, PartyPopper, Film, CakeSlice, School, Vote, Trash2, Pencil, X } from 'lucide-react';
 import { mockEvents, mockPolls } from '@/lib/data';
 import type { Event, Poll, PollOption } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -77,15 +77,40 @@ export function EventPlanner() {
       if (!editingPoll) return;
   
       const formData = new FormData(e.currentTarget);
+      
+      const updatedOptions = editingPoll.options.map((opt, index) => ({
+        ...opt,
+        text: formData.get(`pollOption-${index}`) as string,
+      })).filter(opt => opt.text.trim() !== '');
+
+      const newOptionText = formData.get('newPollOption') as string;
+      if (newOptionText && newOptionText.trim() !== '') {
+        updatedOptions.push({ text: newOptionText.trim(), votes: 0, voters: [] });
+      }
+
       const updatedPoll: Poll = {
           ...editingPoll,
           question: formData.get('pollQuestion') as string,
+          options: updatedOptions
       };
       
       setPolls(prev => prev.map(p => p.id === editingPoll.id ? updatedPoll : p));
       setEditingPoll(null);
       setIsPollDialogOpen(false);
       toast({ title: 'Poll updated!' });
+  };
+
+  const handlePollOptionChange = (index: number, value: string) => {
+    if (!editingPoll) return;
+    const newOptions = [...editingPoll.options];
+    newOptions[index].text = value;
+    setEditingPoll({ ...editingPoll, options: newOptions });
+  };
+
+  const handleRemovePollOption = (index: number) => {
+    if (!editingPoll) return;
+    const newOptions = editingPoll.options.filter((_, i) => i !== index);
+    setEditingPoll({ ...editingPoll, options: newOptions });
   };
 
 
@@ -217,6 +242,26 @@ export function EventPlanner() {
                     <Label htmlFor="pollQuestion">Poll Question</Label>
                     <Input id="pollQuestion" name="pollQuestion" defaultValue={editingPoll.question} required />
                 </div>
+                
+                <div className="space-y-2">
+                  <Label>Options</Label>
+                  {editingPoll.options.map((option, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input 
+                        name={`pollOption-${index}`}
+                        value={option.text}
+                        onChange={(e) => handlePollOptionChange(index, e.target.value)}
+                      />
+                      <Button type="button" variant="ghost" size="icon" onClick={() => handleRemovePollOption(index)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                   <div className="flex items-center gap-2">
+                      <Input name="newPollOption" placeholder="Add new option"/>
+                    </div>
+                </div>
+
                 <DialogFooter>
                     <Button type="button" variant="ghost" onClick={() => setIsPollDialogOpen(false)}>Cancel</Button>
                     <Button type="submit">Save Changes</Button>
