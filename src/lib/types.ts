@@ -1,4 +1,10 @@
 
+
+export type UserProfile = {
+  id?: string;
+  name: string;
+};
+
 export type Expense = {
   id?: string;
   name: string;

@@ -2,11 +2,14 @@
 "use client";
 
 import React, { createContext, useContext, useState } from 'react';
-import { mockExpenses, mockGroceryList, mockChores, mockEvents, mockPolls, mockNotes, mockTasks, mockTimetable, mockMoodData } from '@/lib/data';
-import type { Expense, GroceryItem, Chore, Event, Poll, Note, Task, Class, MoodEntry } from '@/lib/types';
+import { mockExpenses, mockGroceryList, mockChores, mockEvents, mockPolls, mockNotes, mockTasks, mockTimetable, mockMoodData, mockUser } from '@/lib/data';
+import type { Expense, GroceryItem, Chore, Event, Poll, Note, Task, Class, MoodEntry, UserProfile } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 interface DataContextType {
+  user: UserProfile;
+  updateUser: (user: UserProfile) => void;
+
   expenses: Expense[];
   addExpense: (expense: Omit<Expense, 'id' | 'flatmateId'>) => void;
   deleteExpense: (id: string) => void;
@@ -54,6 +57,7 @@ const noteColors = [
 
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<UserProfile>(mockUser);
   const [expenses, setExpenses] = useState<Expense[]>(mockExpenses);
   const [groceries, setGroceries] = useState<GroceryItem[]>(mockGroceryList);
   const [chores, setChores] = useState<Chore[]>(mockChores);
@@ -66,12 +70,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const { toast } = useToast();
 
+  const updateUser = (user: UserProfile) => {
+    setUser(user);
+    toast({ title: 'Profile updated!' });
+  };
+
   const addExpense = (expense: Omit<Expense, 'id' | 'flatmateId'>) => {
     const newExpense: Expense = {
       ...expense,
       id: `exp-${Date.now()}`,
       flatmateId: 'user-1',
-      paidBy: 'Me',
+      paidBy: user.name,
       date: new Date().toISOString()
     };
     setExpenses(prev => [...prev, newExpense]);
@@ -152,7 +161,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const newNote: Note = {
       ...note,
       id: `note-${Date.now()}`,
-      author: 'Me',
+      author: user.name,
       authorId: 'user-1',
       color: noteColors[Math.floor(Math.random() * noteColors.length)],
       createdAt: new Date(),
@@ -183,6 +192,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <DataContext.Provider value={{
+      user, updateUser,
       expenses, addExpense, deleteExpense,
       groceries, addGrocery, toggleGrocery, deleteGrocery,
       chores, toggleChore, updateChore,
@@ -205,5 +215,3 @@ export function useData() {
   }
   return context;
 }
-
-    

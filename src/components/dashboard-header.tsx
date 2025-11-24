@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
@@ -25,10 +26,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useSidebar } from '@/components/ui/sidebar';
+import { useData } from '@/context/data-context';
+
 
 const pageTitles: { [key: string]: { title: string, icon: React.ElementType } } = {
   '/dashboard': { title: 'Overview', icon: LayoutDashboard },
@@ -45,10 +58,22 @@ const pageTitles: { [key: string]: { title: string, icon: React.ElementType } } 
 export function DashboardHeader() {
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
+  const { user, updateUser } = useData();
+
+  const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   
   const { title, icon: Icon } = pageTitles[pathname] || { title: 'Dashboard', icon: LayoutDashboard };
 
+  const handleProfileUpdate = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const newName = formData.get('name') as string;
+    updateUser({ ...user, name: newName });
+    setIsProfileDialogOpen(false);
+  };
+
   return (
+    <>
     <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
       <Button
         variant="ghost"
@@ -72,16 +97,18 @@ export function DashboardHeader() {
             <Button variant="ghost" className="relative h-9 w-9 rounded-full">
               <Avatar className="h-9 w-9">
                 <AvatarImage src="https://picsum.photos/seed/user-avatar/100" alt="User Avatar" />
-                <AvatarFallback>{'U'}</AvatarFallback>
+                <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel className="flex items-center gap-2">
-                User
-                <Button variant="ghost" size="icon" className="h-6 w-6">
-                    <Pencil className="h-4 w-4" />
-                </Button>
+                {user.name}
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsProfileDialogOpen(true)}>
+                      <Pencil className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem>
@@ -92,5 +119,24 @@ export function DashboardHeader() {
         </DropdownMenu>
       </div>
     </header>
+
+    <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Edit Profile</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleProfileUpdate} className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="name">Your Name</Label>
+                    <Input id="name" name="name" defaultValue={user.name} required />
+                </div>
+                <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setIsProfileDialogOpen(false)}>Cancel</Button>
+                    <Button type="submit">Save Changes</Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }

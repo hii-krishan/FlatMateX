@@ -1,5 +1,11 @@
 
-import type { Expense, Task, Class, GroceryItem, Chore, MoodEntry, Event, Poll, Service, Note } from './types';
+
+import type { Expense, Task, Class, GroceryItem, Chore, MoodEntry, Event, Poll, Service, Note, UserProfile } from './types';
+
+export const mockUser: UserProfile = {
+  id: 'user-1',
+  name: 'Alex',
+};
 
 export const mockNotes: Note[] = [
   { id: 'n1', content: 'Pay electricity bill by Friday!', color: 'bg-yellow-200', author: 'Alex', createdAt: new Date('2024-07-22T10:00:00Z'), authorId: 'user-1' },
@@ -80,5 +86,3 @@ export const mockServices: Service[] = [
   { id: 's4', 'name': 'City General Hospital', 'type': 'Hospital', 'rating': 4.6, 'distance': '2.5km' },
   { id: 's5', 'name': 'Central Bank ATM', 'type': 'ATM', 'rating': 4.0, 'distance': '300m' },
 ];
-
-    
