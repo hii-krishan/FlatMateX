@@ -80,7 +80,7 @@ export type Poll = {
 export type Service = {
   id: string;
   name: string;
-  type: 'Tiffin' | 'Laundry' | 'Stationery' | 'Hospital' | 'ATM';
+  type: 'Tiffin' | 'Laundry' | 'Grocery Store' | 'Restaurant' | 'Electronics' | 'Furniture';
   rating: number;
   distance: string;
 };

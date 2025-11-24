@@ -8,17 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { mockServices } from "@/lib/data";
 import type { Service } from "@/lib/types";
-import { Utensils, Shirt, BookOpen, Hospital, Landmark, Star, Lightbulb, MapPin, ExternalLink } from "lucide-react";
+import { Utensils, Shirt, Hospital, Landmark, Star, Lightbulb, MapPin, ExternalLink, ShoppingCart, Tv, CookingPot, Armchair } from "lucide-react";
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-type ServiceType = 'Tiffin' | 'Laundry' | 'Stationery' | 'Hospital' | 'ATM';
+type ServiceType = 'Tiffin' | 'Laundry' | 'Grocery Store' | 'Restaurant' | 'Electronics' | 'Furniture';
 
 const serviceIcons: { [key in ServiceType]: React.ElementType } = {
-  Tiffin: Utensils,
-  Laundry: Shirt,
-  Stationery: BookOpen,
-  Hospital: Hospital,
-  ATM: Landmark,
+    'Tiffin': CookingPot,
+    'Laundry': Shirt,
+    'Grocery Store': ShoppingCart,
+    'Restaurant': Utensils,
+    'Electronics': Tv,
+    'Furniture': Armchair
 };
 
 const mapPlaceholder = PlaceHolderImages.find(img => img.id === 'map-placeholder');

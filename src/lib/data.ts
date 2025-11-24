@@ -80,9 +80,10 @@ export const mockPolls: Poll[] = [
 ];
 
 export const mockServices: Service[] = [
-  { id: 's1', name: 'Tasty Meals Tiffin', type: 'Tiffin', rating: 4.5, distance: '500m' },
-  { id: 's2', name: 'QuickWash Laundry', type: 'Laundry', rating: 4.2, distance: '1.2km' },
-  { id: 's3', name: 'The Book Nook', type: 'Stationery', rating: 4.8, distance: '800m' },
-  { id: 's4', 'name': 'City General Hospital', 'type': 'Hospital', 'rating': 4.6, 'distance': '2.5km' },
-  { id: 's5', 'name': 'Central Bank ATM', 'type': 'ATM', 'rating': 4.0, 'distance': '300m' },
+    { id: 's1', name: 'Tasty Meals Tiffin', type: 'Tiffin', rating: 4.5, distance: '500m' },
+    { id: 's2', name: 'QuickWash Laundry', type: 'Laundry', rating: 4.2, distance: '1.2km' },
+    { id: 's3', name: 'Daily Needs Grocery', type: 'Grocery Store', rating: 4.8, distance: '800m' },
+    { id: 's4', name: 'The Food Hub', type: 'Restaurant', rating: 4.6, distance: '2.5km' },
+    { id: 's5', name: 'Gadget World', type: 'Electronics', rating: 4.0, distance: '300m' },
+    { id: 's6', name: 'Comfy Homes', type: 'Furniture', rating: 4.3, distance: '1.5km' },
 ];
