@@ -83,29 +83,39 @@ export function AuthProvider({ children }) {
         provider: "google",
         options: { redirectTo: window.location.origin }
       }),
-      signOut: async () => {
-        try {
-          localStorage.removeItem("flatmatex_guest");
-          // Clear cached user data so next user loads their own fresh data
-          Object.keys(localStorage).forEach((key) => {
-            if (
-              key.startsWith("flatmatex_") &&
-              key !== "flatmatex_last_invited_group" &&
-              !key.startsWith("flatmate_invite_")
-            ) {
-              localStorage.removeItem(key);
-            }
-          });
-        } catch {}
-        setGuestUser(false);
-        if (supabase) {
-          const result = await supabase.auth.signOut();
-          window.location.assign("/dashboard");
-          return result;
-        }
-        window.location.assign("/dashboard");
-        return { error: null };
-      },
+      
+signOut: async () => {
+  try {
+    localStorage.removeItem("flatmatex_guest");
+
+    Object.keys(localStorage).forEach((key) => {
+      if (
+        key.startsWith("flatmatex_") &&
+        key !== "flatmatex_last_invited_group" &&
+        !key.startsWith("flatmate_invite_")
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    console.error("Error clearing local data:", error);
+  }
+
+  setGuestUser(false);
+
+  if (supabase) {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error("Supabase sign-out failed:", error.message);
+      return { error };
+    }
+  }
+
+  window.location.replace("/");
+  return { error: null };
+},
+
       updateProfile: (displayName) => {
         if (session?.user && supabase) {
           return supabase.auth.updateUser({
