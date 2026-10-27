@@ -5,13 +5,12 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import DashboardLayout from "@/app/dashboard/layout";
 import DashboardPage from "@/app/dashboard/page";
-import AssistantPage from "@/app/dashboard/assistant/page";
 import EventsPage from "@/app/dashboard/events/page";
 import ExpensesPage from "@/app/dashboard/expenses/page";
 import GroceriesPage from "@/app/dashboard/groceries/page";
 import NotesPage from "@/app/dashboard/notes/page";
 import PlannerPage from "@/app/dashboard/planner/page";
-import ServicesPage from "@/app/dashboard/services/page";
+import FlatmatesPage from "@/app/dashboard/flatmates/page";
 import WellnessPage from "@/app/dashboard/wellness/page";
 import SettingsPage from "@/app/dashboard/settings/page";
 import { AuthProvider, useAuth } from "@/context/auth-context";
@@ -19,13 +18,12 @@ import { AuthPage } from "@/components/auth-page";
 
 const pages = {
   "/dashboard": DashboardPage,
-  "/dashboard/assistant": AssistantPage,
   "/dashboard/events": EventsPage,
   "/dashboard/expenses": ExpensesPage,
   "/dashboard/groceries": GroceriesPage,
   "/dashboard/notes": NotesPage,
   "/dashboard/planner": PlannerPage,
-  "/dashboard/services": ServicesPage,
+  "/dashboard/flatmates": FlatmatesPage,
   "/dashboard/wellness": WellnessPage,
   "/dashboard/settings": SettingsPage,
 };

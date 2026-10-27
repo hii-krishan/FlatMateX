@@ -2,8 +2,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Wallet,
-  Bot,
-  Map,
+  UsersRound,
   CalendarCheck,
   ShoppingCart,
   HeartPulse,
@@ -27,12 +26,11 @@ import {
 const primaryNav = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Overview" },
   { href: "/dashboard/expenses", icon: Wallet, label: "Expenses" },
-  { href: "/dashboard/assistant", icon: Bot, label: "AI Assistant", badge: "New" },
   { href: "/dashboard/notes", icon: StickyNote, label: "Shared Notes" }
 ];
 
 const homeNav = [
-  { href: "/dashboard/services", icon: Map, label: "Nearby Services" },
+  { href: "/dashboard/flatmates", icon: UsersRound, label: "Flatmate Group", badge: "Group" },
   { href: "/dashboard/planner", icon: CalendarCheck, label: "Planner" },
   { href: "/dashboard/groceries", icon: ShoppingCart, label: "Groceries" },
   { href: "/dashboard/wellness", icon: HeartPulse, label: "Wellness" },

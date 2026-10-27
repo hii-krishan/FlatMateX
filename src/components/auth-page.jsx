@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/auth-context";
 
 export function AuthPage() {
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword, signInAsGuest } = useAuth();
   const [mode, setMode] = useState("signin");
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [status, setStatus] = useState({ loading: false, error: "", success: "" });
@@ -29,6 +29,33 @@ export function AuthPage() {
         ? "Check your email to confirm your account."
         : ""
     });
+    if (result.data.session) window.location.assign("/dashboard");
+  };
+
+  const sendResetEmail = async () => {
+    if (!form.email) {
+      setStatus({ loading: false, error: "Enter your email address first.", success: "" });
+      return;
+    }
+    const lastSent = Number(localStorage.getItem("flatmatex-reset-sent-at") || 0);
+    const waitSeconds = Math.ceil((60_000 - (Date.now() - lastSent)) / 1000);
+    if (waitSeconds > 0) {
+      setStatus({ loading: false, error: `Please wait ${waitSeconds} seconds before requesting another reset email.`, success: "" });
+      return;
+    }
+    setStatus({ loading: true, error: "", success: "" });
+    const result = await resetPassword(form.email);
+    if (result.error) {
+      const isRateLimit = result.error.status === 429 || result.error.message.toLowerCase().includes("rate limit");
+      setStatus({
+        loading: false,
+        error: isRateLimit ? "Supabase has temporarily rate-limited reset emails. Wait a few minutes and try again." : result.error.message,
+        success: ""
+      });
+      return;
+    }
+    localStorage.setItem("flatmatex-reset-sent-at", Date.now().toString());
+    setStatus({ loading: false, error: "", success: "Password reset instructions sent. Check your inbox." });
   };
 
   return (
@@ -56,12 +83,25 @@ export function AuthPage() {
         </section>
         <section className="p-7 sm:p-12">
           <div className="mx-auto max-w-sm">
-            <p className="mb-2 text-sm font-semibold text-primary">{mode === "signin" ? "Welcome back" : "Get started"}</p>
-            <h2 className="font-headline text-3xl font-bold">{mode === "signin" ? "Sign in to your home" : "Create your account"}</h2>
+            <p className="mb-2 text-sm font-semibold text-primary">{mode === "signin" ? "Welcome back" : mode === "reset" ? "Account recovery" : "Get started"}</p>
+            <h2 className="font-headline text-3xl font-bold">{mode === "signin" ? "Sign in to your home" : mode === "reset" ? "Reset your password" : "Create your account"}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {mode === "signin" ? "Pick up where you left off." : "Your shared home is a few clicks away."}
+              {mode === "signin" ? "Pick up where you left off." : mode === "reset" ? "We will send a secure reset link to your email." : "Your shared home is a few clicks away."}
             </p>
-            <form onSubmit={submit} className="mt-8 space-y-5">
+            {mode === "reset" ? (
+              <div className="mt-8 space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Account email</Label>
+                  <div className="relative"><Mail className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input id="reset-email" type="email" className="pl-9" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></div>
+                </div>
+                {status.error && <p className="text-sm text-destructive">{status.error}</p>}
+                {status.success && <p className="text-sm text-primary">{status.success}</p>}
+                <Button type="button" className="h-11 w-full rounded-xl" onClick={sendResetEmail} disabled={status.loading}>
+                  {status.loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Send reset email
+                </Button>
+              </div>
+            ) : <form onSubmit={submit} className="mt-8 space-y-5">
               {mode === "signup" && (
                 <div className="space-y-2">
                   <Label htmlFor="auth-name">Your name</Label>
@@ -82,9 +122,14 @@ export function AuthPage() {
                 {status.loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {mode === "signin" ? "Sign in" : "Create account"}
               </Button>
-            </form>
+            </form>}
+            {mode === "signin" && <button type="button" className="mt-4 w-full text-sm text-muted-foreground hover:text-primary" onClick={() => { setMode("reset"); setStatus({ loading: false, error: "", success: "" }); }}>Forgot your password?</button>}
+            <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" />or<span className="h-px flex-1 bg-border" /></div>
+            <Button type="button" variant="outline" className="h-11 w-full rounded-xl" onClick={() => signInWithGoogle()}>
+              Continue with Google
+            </Button>
             <button type="button" className="mt-6 w-full text-sm text-muted-foreground hover:text-primary" onClick={() => { setMode(mode === "signin" ? "signup" : "signin"); setStatus({ loading: false, error: "", success: "" }); }}>
-              {mode === "signin" ? "New to FlatMateX? Create an account" : "Already have an account? Sign in"}
+              {mode === "signin" ? "New to FlatMateX? Create an account" : "Back to sign in"}
             </button>
           </div>
         </section>
